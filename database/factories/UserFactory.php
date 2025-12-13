@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Family;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,6 +30,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'family_id' => Family::factory(),
+            'can_login' => true,
         ];
     }
 
@@ -39,6 +42,29 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Create a user without login credentials (family member only).
+     */
+    public function withoutLogin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email' => null,
+            'password' => null,
+            'can_login' => false,
+            'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Create a user for a specific family.
+     */
+    public function forFamily(Family $family): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'family_id' => $family->id,
         ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\EquipmentType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Activity extends Model
 {
@@ -14,6 +15,7 @@ class Activity extends Model
 
     protected $fillable = [
         'name',
+        'family_id',
         'activity_type_id',
         'equipment_type',
         'muscle_group',
@@ -37,5 +39,21 @@ class Activity extends Model
     public function activityType(): BelongsTo
     {
         return $this->belongsTo(ActivityType::class);
+    }
+
+    /**
+     * @return BelongsTo<Family, $this>
+     */
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class);
+    }
+
+    /**
+     * @return HasMany<ActivityLog, $this>
+     */
+    public function logs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 }

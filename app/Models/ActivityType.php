@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ActivityType extends Model
@@ -13,6 +14,7 @@ class ActivityType extends Model
 
     protected $fillable = [
         'name',
+        'family_id',
         'description',
         'color',
         'icon',
@@ -24,5 +26,13 @@ class ActivityType extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(Activity::class);
+    }
+
+    /**
+     * @return BelongsTo<Family, $this>
+     */
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class);
     }
 }
