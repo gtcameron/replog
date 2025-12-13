@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -30,6 +31,11 @@ const form = useForm({
     muscle_group: props.activity.muscle_group ?? '',
     description: props.activity.description ?? '',
     instructions: props.activity.instructions ?? '',
+    tracks_sets: props.activity.tracks_sets,
+    tracks_reps: props.activity.tracks_reps,
+    tracks_weight: props.activity.tracks_weight,
+    tracks_duration: props.activity.tracks_duration,
+    tracks_distance: props.activity.tracks_distance,
 });
 
 function submit() {
@@ -171,6 +177,55 @@ function submit() {
                             <p v-if="form.errors.instructions" class="text-sm text-destructive">
                                 {{ form.errors.instructions }}
                             </p>
+                        </div>
+
+                        <div class="border-t pt-6">
+                            <h3 class="text-sm font-medium mb-4">Tracked Metrics</h3>
+                            <p class="text-sm text-muted-foreground mb-4">
+                                Select which metrics to track when logging this activity.
+                            </p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="tracks_sets"
+                                        :checked="form.tracks_sets"
+                                        @update:checked="form.tracks_sets = $event"
+                                    />
+                                    <Label for="tracks_sets" class="font-normal">Sets</Label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="tracks_reps"
+                                        :checked="form.tracks_reps"
+                                        @update:checked="form.tracks_reps = $event"
+                                    />
+                                    <Label for="tracks_reps" class="font-normal">Reps</Label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="tracks_weight"
+                                        :checked="form.tracks_weight"
+                                        @update:checked="form.tracks_weight = $event"
+                                    />
+                                    <Label for="tracks_weight" class="font-normal">Weight</Label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="tracks_duration"
+                                        :checked="form.tracks_duration"
+                                        @update:checked="form.tracks_duration = $event"
+                                    />
+                                    <Label for="tracks_duration" class="font-normal">Duration</Label>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="tracks_distance"
+                                        :checked="form.tracks_distance"
+                                        @update:checked="form.tracks_distance = $event"
+                                    />
+                                    <Label for="tracks_distance" class="font-normal">Distance</Label>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex items-center gap-4">
