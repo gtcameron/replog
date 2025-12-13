@@ -17,3 +17,19 @@ export interface User {
     created_at: string;
     updated_at: string;
 }
+
+export interface Exercise {
+    id: number;
+    name: string;
+    equipment_type: string;
+    muscle_group: string | null;
+    description: string | null;
+    instructions: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface EquipmentType {
+    value: string;
+    label: string;
+}
