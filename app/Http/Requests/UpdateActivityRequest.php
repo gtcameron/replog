@@ -6,7 +6,7 @@ use App\Enums\EquipmentType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateExerciseRequest extends FormRequest
+class UpdateActivityRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,7 +25,8 @@ class UpdateExerciseRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'equipment_type' => ['required', Rule::enum(EquipmentType::class)],
+            'activity_type_id' => ['nullable', 'exists:activity_types,id'],
+            'equipment_type' => ['nullable', Rule::enum(EquipmentType::class)],
             'muscle_group' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'instructions' => ['nullable', 'string', 'max:5000'],
@@ -38,8 +39,7 @@ class UpdateExerciseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'The exercise name is required.',
-            'equipment_type.required' => 'Please select an equipment type.',
+            'name.required' => 'The activity name is required.',
         ];
     }
 }

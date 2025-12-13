@@ -19,9 +19,10 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import type { Exercise } from '@/types';
+import type { Activity } from '@/types';
 
-import { index, create } from '@/actions/App/Http/Controllers/ExerciseController';
+import { index, create } from '@/actions/App/Http/Controllers/ActivityController';
+import { index as activityTypesIndex } from '@/actions/App/Http/Controllers/ActivityTypeController';
 
 defineProps<{
     user: {
@@ -29,27 +30,16 @@ defineProps<{
         name: string;
         email: string;
     };
-    recentExercises: Exercise[];
-    exerciseStats: {
+    recentActivities: Activity[];
+    activityStats: {
         total: number;
-        byEquipment: { type: string; count: number }[];
+        byType: { name: string; color: string; count: number }[];
     };
 }>();
 
 function logout() {
     router.post('/logout');
 }
-
-const equipmentLabels: Record<string, string> = {
-    barbell: 'Barbell',
-    dumbbell: 'Dumbbell',
-    machine: 'Machine',
-    cable: 'Cable',
-    bodyweight: 'Bodyweight',
-    kettlebell: 'Kettlebell',
-    band: 'Resistance Band',
-    other: 'Other',
-};
 </script>
 
 <template>
@@ -70,7 +60,13 @@ const equipmentLabels: Record<string, string> = {
                             :href="index.url()"
                             class="text-sm text-muted-foreground hover:text-foreground"
                         >
-                            Exercises
+                            Activities
+                        </Link>
+                        <Link
+                            :href="activityTypesIndex.url()"
+                            class="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            Categories
                         </Link>
                     </div>
                     <div class="flex items-center gap-4">
@@ -90,26 +86,26 @@ const equipmentLabels: Record<string, string> = {
             </div>
 
             <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <!-- Exercise Stats Card -->
+                <!-- Activity Stats Card -->
                 <Card>
                     <CardHeader class="pb-2">
-                        <CardDescription>Total Exercises</CardDescription>
-                        <CardTitle class="text-4xl">{{ exerciseStats.total }}</CardTitle>
+                        <CardDescription>Total Activities</CardDescription>
+                        <CardTitle class="text-4xl">{{ activityStats.total }}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div class="flex flex-wrap gap-2">
                             <Badge
-                                v-for="stat in exerciseStats.byEquipment"
-                                :key="stat.type"
-                                variant="secondary"
+                                v-for="stat in activityStats.byType"
+                                :key="stat.name"
+                                :style="{ backgroundColor: stat.color, color: 'white' }"
                             >
-                                {{ stat.type }}: {{ stat.count }}
+                                {{ stat.name }}: {{ stat.count }}
                             </Badge>
                         </div>
                     </CardContent>
                     <CardFooter>
                         <Link :href="index.url()" class="w-full">
-                            <Button variant="outline" class="w-full">View All Exercises</Button>
+                            <Button variant="outline" class="w-full">View All Activities</Button>
                         </Link>
                     </CardFooter>
                 </Card>
@@ -123,97 +119,109 @@ const equipmentLabels: Record<string, string> = {
                     <CardContent class="grid gap-2">
                         <Link :href="create.url()">
                             <Button variant="outline" class="w-full justify-start">
-                                + Add New Exercise
+                                + Add New Activity
                             </Button>
                         </Link>
                         <Link :href="index.url()">
                             <Button variant="outline" class="w-full justify-start">
-                                Browse Exercise Library
+                                Browse Activity Library
+                            </Button>
+                        </Link>
+                        <Link :href="activityTypesIndex.url()">
+                            <Button variant="outline" class="w-full justify-start">
+                                Manage Categories
                             </Button>
                         </Link>
                     </CardContent>
                 </Card>
 
-                <!-- Recent Exercises Card -->
+                <!-- Recent Activities Card -->
                 <Card class="md:col-span-2 lg:col-span-1">
                     <CardHeader>
-                        <CardTitle>Recent Exercises</CardTitle>
+                        <CardTitle>Recent Activities</CardTitle>
                         <CardDescription>Latest additions to your library</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div v-if="recentExercises.length > 0" class="space-y-3">
+                        <div v-if="recentActivities.length > 0" class="space-y-3">
                             <div
-                                v-for="exercise in recentExercises"
-                                :key="exercise.id"
+                                v-for="activity in recentActivities"
+                                :key="activity.id"
                                 class="flex items-center justify-between"
                             >
                                 <div>
                                     <Link
-                                        :href="`/exercises/${exercise.id}`"
+                                        :href="`/activities/${activity.id}`"
                                         class="font-medium hover:underline"
                                     >
-                                        {{ exercise.name }}
+                                        {{ activity.name }}
                                     </Link>
                                     <p class="text-sm text-muted-foreground">
-                                        {{ exercise.muscle_group ?? 'No muscle group' }}
+                                        {{ activity.muscle_group ?? 'No target area' }}
                                     </p>
                                 </div>
-                                <Badge variant="outline">
-                                    {{ equipmentLabels[exercise.equipment_type] ?? exercise.equipment_type }}
+                                <Badge
+                                    v-if="activity.activity_type"
+                                    :style="{ backgroundColor: activity.activity_type.color, color: 'white' }"
+                                >
+                                    {{ activity.activity_type.name }}
                                 </Badge>
                             </div>
                         </div>
                         <div v-else class="py-4 text-center text-muted-foreground">
-                            No exercises yet.
+                            No activities yet.
                             <Link :href="create.url()" class="text-primary hover:underline">
-                                Add your first exercise
+                                Add your first activity
                             </Link>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <!-- Full Exercise Table -->
+            <!-- Full Activity Table -->
             <Card class="mt-6">
                 <CardHeader>
                     <div class="flex items-center justify-between">
                         <div>
-                            <CardTitle>Exercise Library</CardTitle>
-                            <CardDescription>Manage your exercises</CardDescription>
+                            <CardTitle>Activity Library</CardTitle>
+                            <CardDescription>Manage your activities</CardDescription>
                         </div>
                         <Link :href="create.url()">
-                            <Button>Add Exercise</Button>
+                            <Button>Add Activity</Button>
                         </Link>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table v-if="recentExercises.length > 0">
+                    <Table v-if="recentActivities.length > 0">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                <TableHead>Equipment</TableHead>
-                                <TableHead>Muscle Group</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Target Area</TableHead>
                                 <TableHead class="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow v-for="exercise in recentExercises" :key="exercise.id">
+                            <TableRow v-for="activity in recentActivities" :key="activity.id">
                                 <TableCell class="font-medium">
                                     <Link
-                                        :href="`/exercises/${exercise.id}`"
+                                        :href="`/activities/${activity.id}`"
                                         class="hover:underline"
                                     >
-                                        {{ exercise.name }}
+                                        {{ activity.name }}
                                     </Link>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant="secondary">
-                                        {{ equipmentLabels[exercise.equipment_type] ?? exercise.equipment_type }}
+                                    <Badge
+                                        v-if="activity.activity_type"
+                                        :style="{ backgroundColor: activity.activity_type.color, color: 'white' }"
+                                    >
+                                        {{ activity.activity_type.name }}
                                     </Badge>
+                                    <span v-else class="text-muted-foreground">-</span>
                                 </TableCell>
-                                <TableCell>{{ exercise.muscle_group ?? '-' }}</TableCell>
+                                <TableCell>{{ activity.muscle_group ?? '-' }}</TableCell>
                                 <TableCell class="text-right">
-                                    <Link :href="`/exercises/${exercise.id}/edit`">
+                                    <Link :href="`/activities/${activity.id}/edit`">
                                         <Button variant="ghost" size="sm">Edit</Button>
                                     </Link>
                                 </TableCell>
@@ -221,17 +229,17 @@ const equipmentLabels: Record<string, string> = {
                         </TableBody>
                     </Table>
                     <div v-else class="py-8 text-center text-muted-foreground">
-                        Your exercise library is empty.
+                        Your activity library is empty.
                         <Link :href="create.url()" class="text-primary hover:underline">
-                            Add your first exercise
+                            Add your first activity
                         </Link>
                         to get started.
                     </div>
                 </CardContent>
-                <CardFooter v-if="exerciseStats.total > 5">
+                <CardFooter v-if="activityStats.total > 5">
                     <Link :href="index.url()" class="w-full">
                         <Button variant="outline" class="w-full">
-                            View All {{ exerciseStats.total }} Exercises
+                            View All {{ activityStats.total }} Activities
                         </Button>
                     </Link>
                 </CardFooter>
