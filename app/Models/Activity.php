@@ -21,6 +21,11 @@ class Activity extends Model
         'muscle_group',
         'description',
         'instructions',
+        'tracks_sets',
+        'tracks_reps',
+        'tracks_weight',
+        'tracks_duration',
+        'tracks_distance',
     ];
 
     /**
@@ -30,6 +35,11 @@ class Activity extends Model
     {
         return [
             'equipment_type' => EquipmentType::class,
+            'tracks_sets' => 'boolean',
+            'tracks_reps' => 'boolean',
+            'tracks_weight' => 'boolean',
+            'tracks_duration' => 'boolean',
+            'tracks_distance' => 'boolean',
         ];
     }
 

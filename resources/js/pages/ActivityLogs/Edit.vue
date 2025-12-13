@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,20 @@ const form = useForm({
     duration_seconds: props.log.duration_seconds ? Math.floor(props.log.duration_seconds / 60).toString() : '',
     distance: props.log.distance?.toString() || '',
     notes: props.log.notes || '',
+});
+
+const selectedActivity = computed(() => {
+    if (!form.activity_id) return null;
+    return props.activities.find(a => a.id.toString() === form.activity_id) || null;
+});
+
+const hasAnyMetrics = computed(() => {
+    if (!selectedActivity.value) return false;
+    return selectedActivity.value.tracks_sets ||
+        selectedActivity.value.tracks_reps ||
+        selectedActivity.value.tracks_weight ||
+        selectedActivity.value.tracks_duration ||
+        selectedActivity.value.tracks_distance;
 });
 
 function submit() {
@@ -141,10 +156,10 @@ function submit() {
                             </p>
                         </div>
 
-                        <div class="border-t pt-6">
-                            <h3 class="text-sm font-medium mb-4">Metrics (Optional)</h3>
+                        <div v-if="selectedActivity && hasAnyMetrics" class="border-t pt-6">
+                            <h3 class="text-sm font-medium mb-4">Metrics</h3>
                             <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
+                                <div v-if="selectedActivity.tracks_sets" class="space-y-2">
                                     <Label for="sets">Sets</Label>
                                     <Input
                                         id="sets"
@@ -158,7 +173,7 @@ function submit() {
                                     </p>
                                 </div>
 
-                                <div class="space-y-2">
+                                <div v-if="selectedActivity.tracks_reps" class="space-y-2">
                                     <Label for="reps">Reps</Label>
                                     <Input
                                         id="reps"
@@ -172,7 +187,7 @@ function submit() {
                                     </p>
                                 </div>
 
-                                <div class="space-y-2">
+                                <div v-if="selectedActivity.tracks_weight" class="space-y-2">
                                     <Label for="weight">Weight (lbs)</Label>
                                     <Input
                                         id="weight"
@@ -187,7 +202,7 @@ function submit() {
                                     </p>
                                 </div>
 
-                                <div class="space-y-2">
+                                <div v-if="selectedActivity.tracks_duration" class="space-y-2">
                                     <Label for="duration_seconds">Duration (minutes)</Label>
                                     <Input
                                         id="duration_seconds"
@@ -201,7 +216,7 @@ function submit() {
                                     </p>
                                 </div>
 
-                                <div class="space-y-2 col-span-2">
+                                <div v-if="selectedActivity.tracks_distance" class="space-y-2" :class="{ 'col-span-2': !selectedActivity.tracks_duration }">
                                     <Label for="distance">Distance (miles)</Label>
                                     <Input
                                         id="distance"

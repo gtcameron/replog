@@ -59,6 +59,11 @@ export interface Activity {
     muscle_group: string | null;
     description: string | null;
     instructions: string | null;
+    tracks_sets: boolean;
+    tracks_reps: boolean;
+    tracks_weight: boolean;
+    tracks_duration: boolean;
+    tracks_distance: boolean;
     created_at: string;
     updated_at: string;
 }

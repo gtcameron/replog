@@ -30,6 +30,11 @@ class UpdateActivityRequest extends FormRequest
             'muscle_group' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'instructions' => ['nullable', 'string', 'max:5000'],
+            'tracks_sets' => ['boolean'],
+            'tracks_reps' => ['boolean'],
+            'tracks_weight' => ['boolean'],
+            'tracks_duration' => ['boolean'],
+            'tracks_distance' => ['boolean'],
         ];
     }
 
