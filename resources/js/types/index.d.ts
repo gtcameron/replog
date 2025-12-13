@@ -18,10 +18,23 @@ export interface User {
     updated_at: string;
 }
 
-export interface Exercise {
+export interface ActivityType {
     id: number;
     name: string;
-    equipment_type: string;
+    description: string | null;
+    color: string;
+    icon: string | null;
+    activities_count?: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Activity {
+    id: number;
+    name: string;
+    activity_type_id: number | null;
+    activity_type?: ActivityType | null;
+    equipment_type: string | null;
     muscle_group: string | null;
     description: string | null;
     instructions: string | null;

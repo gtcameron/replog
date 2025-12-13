@@ -13,36 +13,42 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { EquipmentType, Exercise } from '@/types';
+import type { Activity, ActivityType, EquipmentType } from '@/types';
 
-import { update, index } from '@/actions/App/Http/Controllers/ExerciseController';
+import { update, index } from '@/actions/App/Http/Controllers/ActivityController';
 
 const props = defineProps<{
-    exercise: Exercise;
+    activity: Activity;
+    activityTypes: ActivityType[];
     equipmentTypes: EquipmentType[];
 }>();
 
 const form = useForm({
-    name: props.exercise.name,
-    equipment_type: props.exercise.equipment_type,
-    muscle_group: props.exercise.muscle_group ?? '',
-    description: props.exercise.description ?? '',
-    instructions: props.exercise.instructions ?? '',
+    name: props.activity.name,
+    activity_type_id: props.activity.activity_type_id?.toString() ?? '',
+    equipment_type: props.activity.equipment_type ?? '',
+    muscle_group: props.activity.muscle_group ?? '',
+    description: props.activity.description ?? '',
+    instructions: props.activity.instructions ?? '',
 });
 
 function submit() {
-    form.put(update.url(props.exercise.id));
+    form.transform((data) => ({
+        ...data,
+        activity_type_id: data.activity_type_id || null,
+        equipment_type: data.equipment_type || null,
+    })).put(update.url(props.activity.id));
 }
 </script>
 
 <template>
-    <Head :title="`Edit ${exercise.name}`" />
+    <Head :title="`Edit ${activity.name}`" />
     <div class="min-h-screen bg-background">
         <nav class="border-b bg-card">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex h-16 items-center justify-between">
                     <div class="flex items-center gap-6">
-                        <Link :href="index.url()" class="text-lg font-semibold text-foreground">
+                        <Link href="/dashboard" class="text-lg font-semibold text-foreground">
                             RepLog
                         </Link>
                         <Link
@@ -55,7 +61,7 @@ function submit() {
                             :href="index.url()"
                             class="text-sm text-muted-foreground hover:text-foreground"
                         >
-                            Exercises
+                            Activities
                         </Link>
                     </div>
                 </div>
@@ -65,8 +71,8 @@ function submit() {
         <main class="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
             <Card>
                 <CardHeader>
-                    <CardTitle>Edit Exercise</CardTitle>
-                    <CardDescription>Update the exercise details</CardDescription>
+                    <CardTitle>Edit Activity</CardTitle>
+                    <CardDescription>Update the activity details</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form @submit.prevent="submit" class="space-y-6">
@@ -76,7 +82,7 @@ function submit() {
                                 id="name"
                                 v-model="form.name"
                                 type="text"
-                                placeholder="e.g. Bench Press"
+                                placeholder="e.g. Bench Press, Free Throws, Morning Meditation"
                                 required
                             />
                             <p v-if="form.errors.name" class="text-sm text-destructive">
@@ -85,12 +91,35 @@ function submit() {
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="equipment_type">Equipment Type</Label>
-                            <Select v-model="form.equipment_type" required>
+                            <Label for="activity_type_id">Category</Label>
+                            <Select v-model="form.activity_type_id">
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select equipment type" />
+                                    <SelectValue placeholder="Select a category (optional)" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="">No category</SelectItem>
+                                    <SelectItem
+                                        v-for="type in activityTypes"
+                                        :key="type.id"
+                                        :value="type.id.toString()"
+                                    >
+                                        {{ type.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p v-if="form.errors.activity_type_id" class="text-sm text-destructive">
+                                {{ form.errors.activity_type_id }}
+                            </p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="equipment_type">Equipment Type</Label>
+                            <Select v-model="form.equipment_type">
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select equipment (optional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="">No equipment</SelectItem>
                                     <SelectItem
                                         v-for="type in equipmentTypes"
                                         :key="type.value"
@@ -106,12 +135,12 @@ function submit() {
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="muscle_group">Muscle Group</Label>
+                            <Label for="muscle_group">Muscle Group / Target Area</Label>
                             <Input
                                 id="muscle_group"
                                 v-model="form.muscle_group"
                                 type="text"
-                                placeholder="e.g. Chest, Back, Legs"
+                                placeholder="e.g. Chest, Back, Legs, Ball Handling"
                             />
                             <p v-if="form.errors.muscle_group" class="text-sm text-destructive">
                                 {{ form.errors.muscle_group }}
@@ -123,7 +152,7 @@ function submit() {
                             <Textarea
                                 id="description"
                                 v-model="form.description"
-                                placeholder="Brief description of the exercise"
+                                placeholder="Brief description of the activity"
                                 rows="3"
                             />
                             <p v-if="form.errors.description" class="text-sm text-destructive">
@@ -136,7 +165,7 @@ function submit() {
                             <Textarea
                                 id="instructions"
                                 v-model="form.instructions"
-                                placeholder="Step-by-step instructions for performing the exercise"
+                                placeholder="Step-by-step instructions for performing the activity"
                                 rows="5"
                             />
                             <p v-if="form.errors.instructions" class="text-sm text-destructive">
@@ -146,7 +175,7 @@ function submit() {
 
                         <div class="flex items-center gap-4">
                             <Button type="submit" :disabled="form.processing">
-                                Update Exercise
+                                Update Activity
                             </Button>
                             <Link :href="index.url()">
                                 <Button type="button" variant="outline">Cancel</Button>

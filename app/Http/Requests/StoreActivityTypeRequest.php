@@ -2,11 +2,9 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\EquipmentType;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class StoreExerciseRequest extends FormRequest
+class StoreActivityTypeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,11 +22,10 @@ class StoreExerciseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'equipment_type' => ['required', Rule::enum(EquipmentType::class)],
-            'muscle_group' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'instructions' => ['nullable', 'string', 'max:5000'],
+            'name' => ['required', 'string', 'max:255', 'unique:activity_types,name'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'color' => ['nullable', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'icon' => ['nullable', 'string', 'max:50'],
         ];
     }
 
@@ -38,8 +35,9 @@ class StoreExerciseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'The exercise name is required.',
-            'equipment_type.required' => 'Please select an equipment type.',
+            'name.required' => 'The category name is required.',
+            'name.unique' => 'This category name already exists.',
+            'color.regex' => 'The color must be a valid hex color (e.g. #ff0000).',
         ];
     }
 }

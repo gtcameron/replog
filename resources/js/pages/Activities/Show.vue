@@ -15,18 +15,18 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Exercise } from '@/types';
+import type { Activity } from '@/types';
 
-import { index, edit, destroy } from '@/actions/App/Http/Controllers/ExerciseController';
+import { index, edit, destroy } from '@/actions/App/Http/Controllers/ActivityController';
 
 const props = defineProps<{
-    exercise: Exercise;
+    activity: Activity;
 }>();
 
 const showDeleteDialog = ref(false);
 
-function deleteExercise() {
-    router.delete(destroy.url(props.exercise.id));
+function deleteActivity() {
+    router.delete(destroy.url(props.activity.id));
 }
 
 const equipmentLabels: Record<string, string> = {
@@ -42,13 +42,13 @@ const equipmentLabels: Record<string, string> = {
 </script>
 
 <template>
-    <Head :title="exercise.name" />
+    <Head :title="activity.name" />
     <div class="min-h-screen bg-background">
         <nav class="border-b bg-card">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex h-16 items-center justify-between">
                     <div class="flex items-center gap-6">
-                        <Link :href="index.url()" class="text-lg font-semibold text-foreground">
+                        <Link href="/dashboard" class="text-lg font-semibold text-foreground">
                             RepLog
                         </Link>
                         <Link
@@ -61,7 +61,7 @@ const equipmentLabels: Record<string, string> = {
                             :href="index.url()"
                             class="text-sm text-muted-foreground hover:text-foreground"
                         >
-                            Exercises
+                            Activities
                         </Link>
                     </div>
                 </div>
@@ -73,16 +73,22 @@ const equipmentLabels: Record<string, string> = {
                 <CardHeader>
                     <div class="flex items-start justify-between">
                         <div>
-                            <CardTitle class="text-2xl">{{ exercise.name }}</CardTitle>
-                            <CardDescription class="mt-2 flex items-center gap-2">
-                                <Badge variant="secondary">
-                                    {{ equipmentLabels[exercise.equipment_type] ?? exercise.equipment_type }}
+                            <CardTitle class="text-2xl">{{ activity.name }}</CardTitle>
+                            <CardDescription class="mt-2 flex flex-wrap items-center gap-2">
+                                <Badge
+                                    v-if="activity.activity_type"
+                                    :style="{ backgroundColor: activity.activity_type.color, color: 'white' }"
+                                >
+                                    {{ activity.activity_type.name }}
                                 </Badge>
-                                <span v-if="exercise.muscle_group">{{ exercise.muscle_group }}</span>
+                                <Badge v-if="activity.equipment_type" variant="secondary">
+                                    {{ equipmentLabels[activity.equipment_type] ?? activity.equipment_type }}
+                                </Badge>
+                                <span v-if="activity.muscle_group">{{ activity.muscle_group }}</span>
                             </CardDescription>
                         </div>
                         <div class="flex items-center gap-2">
-                            <Link :href="edit.url(exercise.id)">
+                            <Link :href="edit.url(activity.id)">
                                 <Button variant="outline" size="sm">Edit</Button>
                             </Link>
                             <Button
@@ -97,30 +103,30 @@ const equipmentLabels: Record<string, string> = {
                     </div>
                 </CardHeader>
                 <CardContent class="space-y-6">
-                    <div v-if="exercise.description">
+                    <div v-if="activity.description">
                         <h3 class="text-sm font-medium text-muted-foreground">Description</h3>
-                        <p class="mt-1 text-foreground">{{ exercise.description }}</p>
+                        <p class="mt-1 text-foreground">{{ activity.description }}</p>
                     </div>
 
-                    <div v-if="exercise.instructions">
+                    <div v-if="activity.instructions">
                         <h3 class="text-sm font-medium text-muted-foreground">Instructions</h3>
                         <p class="mt-1 whitespace-pre-wrap text-foreground">
-                            {{ exercise.instructions }}
+                            {{ activity.instructions }}
                         </p>
                     </div>
 
                     <div
-                        v-if="!exercise.description && !exercise.instructions"
+                        v-if="!activity.description && !activity.instructions"
                         class="py-8 text-center text-muted-foreground"
                     >
-                        No additional details provided for this exercise.
+                        No additional details provided for this activity.
                     </div>
                 </CardContent>
             </Card>
 
             <div class="mt-6">
                 <Link :href="index.url()">
-                    <Button variant="outline">Back to Exercises</Button>
+                    <Button variant="outline">Back to Activities</Button>
                 </Link>
             </div>
         </main>
@@ -129,9 +135,9 @@ const equipmentLabels: Record<string, string> = {
     <AlertDialog :open="showDeleteDialog" @update:open="showDeleteDialog = false">
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Delete Exercise</AlertDialogTitle>
+                <AlertDialogTitle>Delete Activity</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Are you sure you want to delete "{{ exercise.name }}"? This action cannot be
+                    Are you sure you want to delete "{{ activity.name }}"? This action cannot be
                     undone.
                 </AlertDialogDescription>
             </AlertDialogHeader>
@@ -139,7 +145,7 @@ const equipmentLabels: Record<string, string> = {
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                     class="bg-destructive text-white hover:bg-destructive/90"
-                    @click="deleteExercise"
+                    @click="deleteActivity"
                 >
                     Delete
                 </AlertDialogAction>
