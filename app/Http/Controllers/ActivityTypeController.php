@@ -16,8 +16,11 @@ class ActivityTypeController extends Controller
      */
     public function index(): Response
     {
+        $family = auth()->user()->family;
+
         return Inertia::render('ActivityTypes/Index', [
             'activityTypes' => ActivityType::query()
+                ->where('family_id', $family->id)
                 ->withCount('activities')
                 ->orderBy('name')
                 ->get(),
@@ -37,7 +40,12 @@ class ActivityTypeController extends Controller
      */
     public function store(StoreActivityTypeRequest $request): RedirectResponse
     {
-        ActivityType::create($request->validated());
+        $family = auth()->user()->family;
+
+        ActivityType::create([
+            ...$request->validated(),
+            'family_id' => $family->id,
+        ]);
 
         return redirect()->route('activity-types.index')
             ->with('success', 'Category created successfully.');
@@ -48,6 +56,8 @@ class ActivityTypeController extends Controller
      */
     public function edit(ActivityType $activityType): Response
     {
+        $this->authorizeActivityType($activityType);
+
         return Inertia::render('ActivityTypes/Edit', [
             'activityType' => $activityType,
         ]);
@@ -58,6 +68,8 @@ class ActivityTypeController extends Controller
      */
     public function update(UpdateActivityTypeRequest $request, ActivityType $activityType): RedirectResponse
     {
+        $this->authorizeActivityType($activityType);
+
         $activityType->update($request->validated());
 
         return redirect()->route('activity-types.index')
@@ -69,9 +81,21 @@ class ActivityTypeController extends Controller
      */
     public function destroy(ActivityType $activityType): RedirectResponse
     {
+        $this->authorizeActivityType($activityType);
+
         $activityType->delete();
 
         return redirect()->route('activity-types.index')
             ->with('success', 'Category deleted successfully.');
+    }
+
+    /**
+     * Authorize that the activity type belongs to the current user's family.
+     */
+    private function authorizeActivityType(ActivityType $activityType): void
+    {
+        if ($activityType->family_id !== auth()->user()->family_id) {
+            abort(403, 'This category does not belong to your family.');
+        }
     }
 }

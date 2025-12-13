@@ -144,7 +144,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Features::registration(), // Disabled - users join via family membership
         Features::resetPasswords(),
         // Features::emailVerification(),
         Features::updateProfileInformation(),

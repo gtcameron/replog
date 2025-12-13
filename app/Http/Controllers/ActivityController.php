@@ -18,12 +18,17 @@ class ActivityController extends Controller
      */
     public function index(): Response
     {
+        $family = auth()->user()->family;
+
         return Inertia::render('Activities/Index', [
             'activities' => Activity::query()
+                ->where('family_id', $family->id)
                 ->with('activityType')
                 ->orderBy('name')
                 ->get(),
-            'activityTypes' => ActivityType::orderBy('name')->get(),
+            'activityTypes' => ActivityType::where('family_id', $family->id)
+                ->orderBy('name')
+                ->get(),
             'equipmentTypes' => collect(EquipmentType::cases())->map(fn (EquipmentType $type) => [
                 'value' => $type->value,
                 'label' => $type->label(),
@@ -36,8 +41,12 @@ class ActivityController extends Controller
      */
     public function create(): Response
     {
+        $family = auth()->user()->family;
+
         return Inertia::render('Activities/Create', [
-            'activityTypes' => ActivityType::orderBy('name')->get(),
+            'activityTypes' => ActivityType::where('family_id', $family->id)
+                ->orderBy('name')
+                ->get(),
             'equipmentTypes' => collect(EquipmentType::cases())->map(fn (EquipmentType $type) => [
                 'value' => $type->value,
                 'label' => $type->label(),
@@ -50,7 +59,12 @@ class ActivityController extends Controller
      */
     public function store(StoreActivityRequest $request): RedirectResponse
     {
-        Activity::create($request->validated());
+        $family = auth()->user()->family;
+
+        Activity::create([
+            ...$request->validated(),
+            'family_id' => $family->id,
+        ]);
 
         return redirect()->route('activities.index')
             ->with('success', 'Activity created successfully.');
@@ -61,6 +75,8 @@ class ActivityController extends Controller
      */
     public function show(Activity $activity): Response
     {
+        $this->authorizeActivity($activity);
+
         return Inertia::render('Activities/Show', [
             'activity' => $activity->load('activityType'),
         ]);
@@ -71,9 +87,15 @@ class ActivityController extends Controller
      */
     public function edit(Activity $activity): Response
     {
+        $this->authorizeActivity($activity);
+
+        $family = auth()->user()->family;
+
         return Inertia::render('Activities/Edit', [
             'activity' => $activity->load('activityType'),
-            'activityTypes' => ActivityType::orderBy('name')->get(),
+            'activityTypes' => ActivityType::where('family_id', $family->id)
+                ->orderBy('name')
+                ->get(),
             'equipmentTypes' => collect(EquipmentType::cases())->map(fn (EquipmentType $type) => [
                 'value' => $type->value,
                 'label' => $type->label(),
@@ -86,6 +108,8 @@ class ActivityController extends Controller
      */
     public function update(UpdateActivityRequest $request, Activity $activity): RedirectResponse
     {
+        $this->authorizeActivity($activity);
+
         $activity->update($request->validated());
 
         return redirect()->route('activities.index')
@@ -97,9 +121,21 @@ class ActivityController extends Controller
      */
     public function destroy(Activity $activity): RedirectResponse
     {
+        $this->authorizeActivity($activity);
+
         $activity->delete();
 
         return redirect()->route('activities.index')
             ->with('success', 'Activity deleted successfully.');
+    }
+
+    /**
+     * Authorize that the activity belongs to the current user's family.
+     */
+    private function authorizeActivity(Activity $activity): void
+    {
+        if ($activity->family_id !== auth()->user()->family_id) {
+            abort(403, 'This activity does not belong to your family.');
+        }
     }
 }

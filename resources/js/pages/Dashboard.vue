@@ -19,26 +19,53 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import type { Activity } from '@/types';
+import type { Activity, ActivityLog } from '@/types';
 
 import { index, create } from '@/actions/App/Http/Controllers/ActivityController';
 import { index as activityTypesIndex } from '@/actions/App/Http/Controllers/ActivityTypeController';
+import { index as logsIndex, create as createLog } from '@/actions/App/Http/Controllers/ActivityLogController';
+import { edit as familyEdit } from '@/actions/App/Http/Controllers/FamilyController';
 
 defineProps<{
     user: {
         id: number;
         name: string;
-        email: string;
+        email: string | null;
     };
     recentActivities: Activity[];
+    recentLogs: ActivityLog[];
     activityStats: {
         total: number;
+        logsThisWeek: number;
         byType: { name: string; color: string; count: number }[];
     };
 }>();
 
 function logout() {
     router.post('/logout');
+}
+
+function formatDate(dateString: string) {
+    return new Date(dateString).toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+    });
+}
+
+function formatMetrics(log: ActivityLog): string {
+    const parts = [];
+    if (log.sets && log.reps) {
+        parts.push(`${log.sets}×${log.reps}`);
+    }
+    if (log.weight) {
+        parts.push(`${log.weight} lbs`);
+    }
+    if (log.duration_seconds) {
+        const mins = Math.floor(log.duration_seconds / 60);
+        parts.push(`${mins} min`);
+    }
+    return parts.join(' · ') || '';
 }
 </script>
 
@@ -63,10 +90,22 @@ function logout() {
                             Activities
                         </Link>
                         <Link
+                            :href="logsIndex.url()"
+                            class="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            Logs
+                        </Link>
+                        <Link
                             :href="activityTypesIndex.url()"
                             class="text-sm text-muted-foreground hover:text-foreground"
                         >
                             Categories
+                        </Link>
+                        <Link
+                            :href="familyEdit.url()"
+                            class="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            Family
                         </Link>
                     </div>
                     <div class="flex items-center gap-4">
@@ -78,18 +117,23 @@ function logout() {
         </nav>
 
         <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <div class="mb-8">
-                <h1 class="text-2xl font-semibold text-foreground">Dashboard</h1>
-                <p class="mt-1 text-muted-foreground">
-                    Welcome back, {{ user.name }}!
-                </p>
+            <div class="mb-8 flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-semibold text-foreground">Dashboard</h1>
+                    <p class="mt-1 text-muted-foreground">
+                        Welcome back, {{ user.name }}!
+                    </p>
+                </div>
+                <Link :href="createLog.url()">
+                    <Button>Log Activity</Button>
+                </Link>
             </div>
 
-            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <!-- Activity Stats Card -->
                 <Card>
                     <CardHeader class="pb-2">
-                        <CardDescription>Total Activities</CardDescription>
+                        <CardDescription>Activities</CardDescription>
                         <CardTitle class="text-4xl">{{ activityStats.total }}</CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -103,40 +147,91 @@ function logout() {
                             </Badge>
                         </div>
                     </CardContent>
-                    <CardFooter>
-                        <Link :href="index.url()" class="w-full">
-                            <Button variant="outline" class="w-full">View All Activities</Button>
-                        </Link>
-                    </CardFooter>
                 </Card>
 
-                <!-- Quick Actions Card -->
+                <!-- Logs This Week Card -->
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Quick Actions</CardTitle>
-                        <CardDescription>Common tasks</CardDescription>
+                    <CardHeader class="pb-2">
+                        <CardDescription>Logs This Week</CardDescription>
+                        <CardTitle class="text-4xl">{{ activityStats.logsThisWeek }}</CardTitle>
                     </CardHeader>
-                    <CardContent class="grid gap-2">
-                        <Link :href="create.url()">
-                            <Button variant="outline" class="w-full justify-start">
-                                + Add New Activity
-                            </Button>
-                        </Link>
-                        <Link :href="index.url()">
-                            <Button variant="outline" class="w-full justify-start">
-                                Browse Activity Library
-                            </Button>
-                        </Link>
-                        <Link :href="activityTypesIndex.url()">
-                            <Button variant="outline" class="w-full justify-start">
-                                Manage Categories
-                            </Button>
+                    <CardContent>
+                        <Link :href="logsIndex.url()">
+                            <Button variant="outline" size="sm" class="w-full">View All Logs</Button>
                         </Link>
                     </CardContent>
                 </Card>
 
+                <!-- Quick Actions Card -->
+                <Card class="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Quick Actions</CardTitle>
+                        <CardDescription>Common tasks</CardDescription>
+                    </CardHeader>
+                    <CardContent class="grid grid-cols-2 gap-2">
+                        <Link :href="createLog.url()">
+                            <Button variant="outline" class="w-full justify-start">
+                                + Log Activity
+                            </Button>
+                        </Link>
+                        <Link :href="create.url()">
+                            <Button variant="outline" class="w-full justify-start">
+                                + Add Activity
+                            </Button>
+                        </Link>
+                        <Link :href="logsIndex.url()">
+                            <Button variant="outline" class="w-full justify-start">
+                                View Log History
+                            </Button>
+                        </Link>
+                        <Link :href="familyEdit.url()">
+                            <Button variant="outline" class="w-full justify-start">
+                                Manage Family
+                            </Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div class="mt-6 grid gap-6 lg:grid-cols-2">
+                <!-- Recent Logs Card -->
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Logs</CardTitle>
+                        <CardDescription>Your latest activity logs</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div v-if="recentLogs.length > 0" class="space-y-3">
+                            <div
+                                v-for="log in recentLogs"
+                                :key="log.id"
+                                class="flex items-center justify-between"
+                            >
+                                <div>
+                                    <div class="font-medium">{{ log.activity?.name }}</div>
+                                    <p class="text-sm text-muted-foreground">
+                                        {{ log.user?.name }} · {{ formatDate(log.performed_at) }}
+                                        <span v-if="formatMetrics(log)"> · {{ formatMetrics(log) }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="py-4 text-center text-muted-foreground">
+                            No activity logs yet.
+                            <Link :href="createLog.url()" class="text-primary hover:underline">
+                                Log your first activity
+                            </Link>
+                        </div>
+                    </CardContent>
+                    <CardFooter v-if="recentLogs.length > 0">
+                        <Link :href="logsIndex.url()" class="w-full">
+                            <Button variant="outline" class="w-full">View All Logs</Button>
+                        </Link>
+                    </CardFooter>
+                </Card>
+
                 <!-- Recent Activities Card -->
-                <Card class="md:col-span-2 lg:col-span-1">
+                <Card>
                     <CardHeader>
                         <CardTitle>Recent Activities</CardTitle>
                         <CardDescription>Latest additions to your library</CardDescription>
@@ -174,6 +269,13 @@ function logout() {
                             </Link>
                         </div>
                     </CardContent>
+                    <CardFooter v-if="activityStats.total > 5">
+                        <Link :href="index.url()" class="w-full">
+                            <Button variant="outline" class="w-full">
+                                View All {{ activityStats.total }} Activities
+                            </Button>
+                        </Link>
+                    </CardFooter>
                 </Card>
             </div>
 

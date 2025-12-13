@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Family;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,10 +19,18 @@ class ActivityTypeFactory extends Factory
     {
         return [
             'name' => fake()->unique()->word(),
+            'family_id' => Family::factory(),
             'description' => fake()->optional()->sentence(),
             'color' => fake()->hexColor(),
             'icon' => null,
         ];
+    }
+
+    public function forFamily(Family $family): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'family_id' => $family->id,
+        ]);
     }
 
     public function exercise(): static
