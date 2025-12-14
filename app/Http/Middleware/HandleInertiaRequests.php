@@ -45,6 +45,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'activeWorkout' => fn () => $request->user()
+                ? $request->user()->activeWorkout()?->load('user')
+                : null,
         ];
     }
 }

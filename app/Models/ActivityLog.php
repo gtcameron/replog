@@ -13,6 +13,7 @@ class ActivityLog extends Model
 
     protected $fillable = [
         'family_id',
+        'workout_id',
         'activity_id',
         'user_id',
         'logged_by_id',
@@ -71,5 +72,15 @@ class ActivityLog extends Model
     public function loggedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'logged_by_id');
+    }
+
+    /**
+     * The workout this log belongs to (if any).
+     *
+     * @return BelongsTo<Workout, $this>
+     */
+    public function workout(): BelongsTo
+    {
+        return $this->belongsTo(Workout::class);
     }
 }
