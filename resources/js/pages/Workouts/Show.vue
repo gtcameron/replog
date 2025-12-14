@@ -27,7 +27,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { Activity, ActivityLog, FamilyMember, Workout, ActivityHistoryData, ProgressionPoint, AppPageProps } from '@/types';
 
-import { index, end } from '@/actions/App/Http/Controllers/WorkoutController';
+import { index, end, edit } from '@/actions/App/Http/Controllers/WorkoutController';
 import { store, activityHistory } from '@/actions/App/Http/Controllers/WorkoutActivityLogController';
 import { create as createActivity } from '@/actions/App/Http/Controllers/ActivityController';
 
@@ -260,10 +260,17 @@ function formatHistoryDate(dateString: string): string {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent v-if="isActive">
-                    <Button variant="destructive" @click="endWorkout">
-                        End Workout
-                    </Button>
+                <CardContent>
+                    <div class="flex gap-2">
+                        <Button v-if="isActive" variant="destructive" @click="endWorkout">
+                            End Workout
+                        </Button>
+                        <Link :href="edit.url({ workout: workout.id })">
+                            <Button variant="outline">
+                                Edit Workout
+                            </Button>
+                        </Link>
+                    </div>
                 </CardContent>
             </Card>
 
