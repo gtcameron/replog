@@ -24,6 +24,8 @@ class UpdateWorkoutRequest extends FormRequest
         return [
             'name' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'started_at' => ['nullable', 'date'],
+            'ended_at' => ['nullable', 'date', 'after_or_equal:started_at'],
         ];
     }
 }

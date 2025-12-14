@@ -81,6 +81,21 @@ class WorkoutController extends Controller
     }
 
     /**
+     * Show the form for editing the workout.
+     */
+    public function edit(Workout $workout): Response
+    {
+        $this->authorizeWorkout($workout);
+
+        $family = auth()->user()->family;
+
+        return Inertia::render('Workouts/Edit', [
+            'workout' => $workout->load(['user', 'activityLogs.activity']),
+            'members' => $family->members()->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
      * Update the specified workout.
      */
     public function update(UpdateWorkoutRequest $request, Workout $workout): RedirectResponse
