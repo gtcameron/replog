@@ -85,4 +85,22 @@ class User extends Authenticatable
     {
         return $this->can_login && $this->email !== null && $this->password !== null;
     }
+
+    /**
+     * Workouts where this user is the performer.
+     *
+     * @return HasMany<Workout, $this>
+     */
+    public function workouts(): HasMany
+    {
+        return $this->hasMany(Workout::class);
+    }
+
+    /**
+     * Get the user's currently active workout (if any).
+     */
+    public function activeWorkout(): ?Workout
+    {
+        return $this->workouts()->whereNull('ended_at')->first();
+    }
 }

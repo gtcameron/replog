@@ -46,4 +46,12 @@ class Family extends Model
     {
         return $this->hasMany(ActivityLog::class);
     }
+
+    /**
+     * @return HasMany<Workout, $this>
+     */
+    public function workouts(): HasMany
+    {
+        return $this->hasMany(Workout::class);
+    }
 }

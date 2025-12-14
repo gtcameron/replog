@@ -2,10 +2,28 @@ export interface Auth {
     user: User;
 }
 
+export interface Workout {
+    id: number;
+    family_id: number;
+    user_id: number;
+    user?: User;
+    started_by_id: number;
+    started_by?: User;
+    name: string | null;
+    started_at: string;
+    ended_at: string | null;
+    notes: string | null;
+    activity_logs?: ActivityLog[];
+    activity_logs_count?: number;
+    created_at: string;
+    updated_at: string;
+}
+
 export type AppPageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
     name: string;
     quote: { message: string; author: string };
     auth: Auth;
+    activeWorkout: Workout | null;
 };
 
 export interface Family {
@@ -71,6 +89,8 @@ export interface Activity {
 export interface ActivityLog {
     id: number;
     family_id: number;
+    workout_id: number | null;
+    workout?: Workout;
     activity_id: number;
     activity?: Activity;
     user_id: number;
@@ -101,4 +121,67 @@ export interface PaginatedData<T> {
     total: number;
     from: number | null;
     to: number | null;
+}
+
+// Stats types
+export interface MemberStats {
+    member: FamilyMember;
+    totalSessions: number;
+    activitiesCount: number;
+    lastActive: string | null;
+}
+
+export interface ProgressionPoint {
+    date: string;
+    value: number | null;
+}
+
+export interface ActivityProgression {
+    activity: Activity;
+    data: ProgressionPoint[];
+    personalBest: number;
+    lastValue: number;
+    totalSessions: number;
+}
+
+export interface ActivityStats {
+    activity: Activity;
+    totalLogs: number;
+    participantsCount: number;
+    lastPerformed: string | null;
+}
+
+export interface LeaderboardEntry {
+    member: FamilyMember;
+    value: number;
+    date: string;
+    rank: number;
+}
+
+export interface ChartSeries {
+    memberId: number;
+    memberName: string;
+    data: (number | null)[];
+}
+
+export interface ComparisonChartData {
+    dates: string[];
+    series: ChartSeries[];
+}
+
+// Workout activity history
+export interface ActivityHistoryEntry {
+    id: number;
+    performed_at: string;
+    sets: number | null;
+    reps: number | null;
+    weight: number | null;
+    duration_seconds: number | null;
+    distance: number | null;
+}
+
+export interface ActivityHistoryData {
+    recentLogs: ActivityHistoryEntry[];
+    chartData: ProgressionPoint[];
+    activity: Pick<Activity, 'id' | 'name' | 'tracks_sets' | 'tracks_reps' | 'tracks_weight' | 'tracks_duration' | 'tracks_distance'>;
 }

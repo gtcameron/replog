@@ -2,9 +2,13 @@
 
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\ActivityStatsController;
 use App\Http\Controllers\ActivityTypeController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\FamilyMemberController;
+use App\Http\Controllers\MemberStatsController;
+use App\Http\Controllers\WorkoutActivityLogController;
+use App\Http\Controllers\WorkoutController;
 use App\Models\Activity;
 use App\Models\ActivityLog;
 use App\Models\ActivityType;
@@ -66,6 +70,12 @@ Route::middleware(['auth'])->group(function () {
     // Activity logs
     Route::resource('activity-logs', ActivityLogController::class);
 
+    // Workouts
+    Route::resource('workouts', WorkoutController::class);
+    Route::post('workouts/{workout}/end', [WorkoutController::class, 'end'])->name('workouts.end');
+    Route::post('workouts/{workout}/logs', [WorkoutActivityLogController::class, 'store'])->name('workouts.logs.store');
+    Route::get('workouts/{workout}/activities/{activity}/history', [WorkoutActivityLogController::class, 'activityHistory'])->name('workouts.activities.history');
+
     // Family management
     Route::get('/family', [FamilyController::class, 'edit'])->name('family.edit');
     Route::put('/family', [FamilyController::class, 'update'])->name('family.update');
@@ -77,4 +87,12 @@ Route::middleware(['auth'])->group(function () {
         ->except(['show']);
     Route::post('family/members/{member}/upgrade', [FamilyMemberController::class, 'upgradeToLoginUser'])
         ->name('family.members.upgrade');
+
+    // Stats routes
+    Route::prefix('stats')->group(function () {
+        Route::get('members', [MemberStatsController::class, 'index'])->name('stats.members.index');
+        Route::get('members/{member}', [MemberStatsController::class, 'show'])->name('stats.members.show');
+        Route::get('activities', [ActivityStatsController::class, 'index'])->name('stats.activities.index');
+        Route::get('activities/{activity}', [ActivityStatsController::class, 'show'])->name('stats.activities.show');
+    });
 });

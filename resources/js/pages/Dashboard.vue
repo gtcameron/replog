@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,12 +20,14 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import type { Activity, ActivityLog } from '@/types';
+import type { Activity, ActivityLog, AppPageProps } from '@/types';
 
 import { index, create } from '@/actions/App/Http/Controllers/ActivityController';
 import { index as activityTypesIndex } from '@/actions/App/Http/Controllers/ActivityTypeController';
 import { index as logsIndex, create as createLog } from '@/actions/App/Http/Controllers/ActivityLogController';
 import { edit as familyEdit } from '@/actions/App/Http/Controllers/FamilyController';
+import { index as memberStatsIndex } from '@/actions/App/Http/Controllers/MemberStatsController';
+import { index as workoutsIndex, create as createWorkout, show as showWorkout } from '@/actions/App/Http/Controllers/WorkoutController';
 
 defineProps<{
     user: {
@@ -40,6 +43,9 @@ defineProps<{
         byType: { name: string; color: string; count: number }[];
     };
 }>();
+
+const page = usePage<AppPageProps>();
+const activeWorkout = computed(() => page.props.activeWorkout);
 
 function logout() {
     router.post('/logout');
@@ -71,7 +77,7 @@ function formatMetrics(log: ActivityLog): string {
 
 <template>
     <Head title="Dashboard" />
-    <div class="min-h-screen bg-background">
+    <div class="min-h-screen bg-background" :class="{ 'pt-12': activeWorkout }">
         <nav class="border-b bg-card">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex h-16 items-center justify-between">
@@ -88,6 +94,12 @@ function formatMetrics(log: ActivityLog): string {
                             class="text-sm text-muted-foreground hover:text-foreground"
                         >
                             Activities
+                        </Link>
+                        <Link
+                            :href="workoutsIndex.url()"
+                            class="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            Workouts
                         </Link>
                         <Link
                             :href="logsIndex.url()"
@@ -107,6 +119,12 @@ function formatMetrics(log: ActivityLog): string {
                         >
                             Family
                         </Link>
+                        <Link
+                            :href="memberStatsIndex.url()"
+                            class="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            Stats
+                        </Link>
                     </div>
                     <div class="flex items-center gap-4">
                         <span class="text-sm text-muted-foreground">{{ user.name }}</span>
@@ -124,9 +142,14 @@ function formatMetrics(log: ActivityLog): string {
                         Welcome back, {{ user.name }}!
                     </p>
                 </div>
-                <Link :href="createLog.url()">
-                    <Button>Log Activity</Button>
-                </Link>
+                <div class="flex items-center gap-2">
+                    <Link v-if="activeWorkout" :href="showWorkout.url({ workout: activeWorkout.id })">
+                        <Button>Continue Workout</Button>
+                    </Link>
+                    <Link v-else :href="createWorkout.url()">
+                        <Button>Start Workout</Button>
+                    </Link>
+                </div>
             </div>
 
             <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -169,6 +192,16 @@ function formatMetrics(log: ActivityLog): string {
                         <CardDescription>Common tasks</CardDescription>
                     </CardHeader>
                     <CardContent class="grid grid-cols-2 gap-2">
+                        <Link v-if="activeWorkout" :href="showWorkout.url({ workout: activeWorkout.id })">
+                            <Button variant="outline" class="w-full justify-start">
+                                Continue Workout
+                            </Button>
+                        </Link>
+                        <Link v-else :href="createWorkout.url()">
+                            <Button variant="outline" class="w-full justify-start">
+                                + Start Workout
+                            </Button>
+                        </Link>
                         <Link :href="createLog.url()">
                             <Button variant="outline" class="w-full justify-start">
                                 + Log Activity
@@ -179,14 +212,9 @@ function formatMetrics(log: ActivityLog): string {
                                 + Add Activity
                             </Button>
                         </Link>
-                        <Link :href="logsIndex.url()">
+                        <Link :href="workoutsIndex.url()">
                             <Button variant="outline" class="w-full justify-start">
-                                View Log History
-                            </Button>
-                        </Link>
-                        <Link :href="familyEdit.url()">
-                            <Button variant="outline" class="w-full justify-start">
-                                Manage Family
+                                Workout History
                             </Button>
                         </Link>
                     </CardContent>
