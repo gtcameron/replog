@@ -2,6 +2,7 @@
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
 import { VisXYContainer, VisLine, VisAxis, VisScatter } from '@unovis/vue';
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
+import { Plus, Trash2 } from 'lucide-vue-next';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,11 +26,19 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import type { Activity, ActivityLog, FamilyMember, Workout, ActivityHistoryData, ProgressionPoint, AppPageProps } from '@/types';
+import type { Activity, WorkoutActivity, FamilyMember, Workout, ActivityHistoryData, ProgressionPoint, AppPageProps } from '@/types';
 
 import { index, end, edit } from '@/actions/App/Http/Controllers/WorkoutController';
 import { store, activityHistory } from '@/actions/App/Http/Controllers/WorkoutActivityLogController';
 import { create as createActivity } from '@/actions/App/Http/Controllers/ActivityController';
+
+interface SetData {
+    set_number: number;
+    reps: string;
+    weight: string;
+    duration_seconds: string;
+    distance: string;
+}
 
 const props = defineProps<{
     workout: Workout;
@@ -38,7 +47,7 @@ const props = defineProps<{
 }>();
 
 const page = usePage<AppPageProps>();
-const activeWorkout = computed(() => page.props.activeWorkout);
+const activeWorkout = computed(() => page.props?.activeWorkout ?? null);
 const isActive = computed(() => props.workout.ended_at === null);
 
 // Timer
@@ -72,13 +81,12 @@ onUnmounted(() => {
 });
 
 // Activity form
+const sets = ref<SetData[]>([
+    { set_number: 1, reps: '', weight: '', duration_seconds: '', distance: '' },
+]);
+
 const form = useForm({
     activity_id: '',
-    sets: '',
-    reps: '',
-    weight: '',
-    duration_seconds: '',
-    distance: '',
     notes: '',
 });
 
@@ -89,12 +97,31 @@ const selectedActivity = computed(() => {
 
 const hasAnyMetrics = computed(() => {
     if (!selectedActivity.value) return false;
-    return selectedActivity.value.tracks_sets ||
-        selectedActivity.value.tracks_reps ||
+    return selectedActivity.value.tracks_reps ||
         selectedActivity.value.tracks_weight ||
         selectedActivity.value.tracks_duration ||
         selectedActivity.value.tracks_distance;
 });
+
+function addSet() {
+    const lastSet = sets.value[sets.value.length - 1];
+    sets.value.push({
+        set_number: sets.value.length + 1,
+        reps: lastSet?.reps || '',
+        weight: lastSet?.weight || '',
+        duration_seconds: lastSet?.duration_seconds || '',
+        distance: lastSet?.distance || '',
+    });
+}
+
+function removeSet(index: number) {
+    if (sets.value.length > 1) {
+        sets.value.splice(index, 1);
+        sets.value.forEach((set, i) => {
+            set.set_number = i + 1;
+        });
+    }
+}
 
 // Activity history
 const historyData = ref<ActivityHistoryData | null>(null);
@@ -135,7 +162,7 @@ function getChartConfig(): ChartConfig {
     return {
         value: {
             label: getMetricLabel(),
-            color: selectedActivity.value?.activity_type?.color || 'hsl(var(--primary))',
+            color: 'hsl(var(--primary))',
         },
     };
 }
@@ -149,31 +176,23 @@ function getMetricLabel(): string {
     return 'Value';
 }
 
-function formatMetricValue(value: number | null): string {
-    if (value === null) return '-';
-    if (!selectedActivity.value) return String(value);
-    if (selectedActivity.value.tracks_weight) return `${value} lbs`;
-    if (selectedActivity.value.tracks_duration) {
-        const mins = Math.floor(value / 60);
-        const secs = value % 60;
-        return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-    }
-    if (selectedActivity.value.tracks_distance) return `${value} mi`;
-    return String(value);
-}
-
 function submit() {
+    const transformedSets = sets.value.map(set => ({
+        set_number: set.set_number,
+        reps: set.reps ? parseInt(set.reps) : null,
+        weight: set.weight ? parseFloat(set.weight) : null,
+        duration_seconds: set.duration_seconds ? parseInt(set.duration_seconds) * 60 : null,
+        distance: set.distance ? parseFloat(set.distance) : null,
+    }));
+
     form.transform((data) => ({
         activity_id: parseInt(data.activity_id) || null,
-        sets: data.sets ? parseInt(data.sets) : null,
-        reps: data.reps ? parseInt(data.reps) : null,
-        weight: data.weight ? parseFloat(data.weight) : null,
-        duration_seconds: data.duration_seconds ? parseInt(data.duration_seconds) * 60 : null,
-        distance: data.distance ? parseFloat(data.distance) : null,
         notes: data.notes || null,
+        sets: transformedSets,
     })).post(store.url({ workout: props.workout.id }), {
         onSuccess: () => {
             form.reset();
+            sets.value = [{ set_number: 1, reps: '', weight: '', duration_seconds: '', distance: '' }];
             historyData.value = null;
         },
     });
@@ -183,21 +202,40 @@ function endWorkout() {
     router.post(end.url({ workout: props.workout.id }));
 }
 
-function formatLogMetrics(log: ActivityLog): string {
+function formatLogMetrics(log: WorkoutActivity): string {
+    if (!log.sets || log.sets.length === 0) return '-';
+
+    const setCount = log.sets.length;
     const parts = [];
-    if (log.sets && log.reps) {
-        parts.push(`${log.sets}x${log.reps}`);
+
+    // Get max values across sets
+    const maxReps = Math.max(...log.sets.map(s => s.reps ?? 0));
+    const maxWeight = Math.max(...log.sets.map(s => s.weight ?? 0));
+    const maxDuration = Math.max(...log.sets.map(s => s.duration_seconds ?? 0));
+    const maxDistance = Math.max(...log.sets.map(s => s.distance ?? 0));
+
+    if (setCount > 1 && maxReps > 0) {
+        const firstSet = log.sets[0];
+        const allSameReps = log.sets.every(s => s.reps === firstSet.reps);
+        if (allSameReps && firstSet.reps) {
+            parts.push(`${setCount}x${firstSet.reps}`);
+        } else {
+            parts.push(`${setCount} sets`);
+        }
+    } else if (maxReps > 0) {
+        parts.push(`${maxReps} reps`);
     }
-    if (log.weight) {
-        parts.push(`${log.weight} lbs`);
+
+    if (maxWeight > 0) {
+        parts.push(`${maxWeight} lbs`);
     }
-    if (log.duration_seconds) {
-        const mins = Math.floor(log.duration_seconds / 60);
-        const secs = log.duration_seconds % 60;
+    if (maxDuration > 0) {
+        const mins = Math.floor(maxDuration / 60);
+        const secs = maxDuration % 60;
         parts.push(secs > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${mins} min`);
     }
-    if (log.distance) {
-        parts.push(`${log.distance} mi`);
+    if (maxDistance > 0) {
+        parts.push(`${maxDistance} mi`);
     }
     return parts.join(' / ') || '-';
 }
@@ -207,6 +245,42 @@ function formatHistoryDate(dateString: string): string {
         month: 'short',
         day: 'numeric',
     });
+}
+
+function formatHistorySets(entrySets: { set_number: number; reps: number | null; weight: number | null; duration_seconds: number | null; distance: number | null }[]): string {
+    if (!entrySets || entrySets.length === 0) return '-';
+
+    const setCount = entrySets.length;
+    const parts = [];
+
+    const maxReps = Math.max(...entrySets.map(s => s.reps ?? 0));
+    const maxWeight = Math.max(...entrySets.map(s => s.weight ?? 0));
+    const maxDuration = Math.max(...entrySets.map(s => s.duration_seconds ?? 0));
+    const maxDistance = Math.max(...entrySets.map(s => s.distance ?? 0));
+
+    if (setCount > 1 && maxReps > 0) {
+        const firstSet = entrySets[0];
+        const allSameReps = entrySets.every(s => s.reps === firstSet.reps);
+        if (allSameReps && firstSet.reps) {
+            parts.push(`${setCount}x${firstSet.reps}`);
+        } else {
+            parts.push(`${setCount} sets`);
+        }
+    } else if (maxReps > 0) {
+        parts.push(`${maxReps} reps`);
+    }
+
+    if (maxWeight > 0) {
+        parts.push(`@ ${maxWeight} lbs`);
+    }
+    if (maxDuration > 0) {
+        parts.push(`${Math.floor(maxDuration / 60)}m`);
+    }
+    if (maxDistance > 0) {
+        parts.push(`${maxDistance} mi`);
+    }
+
+    return parts.join(' ') || '-';
 }
 </script>
 
@@ -255,7 +329,7 @@ function formatHistoryDate(dateString: string): string {
                                 {{ formatTime(elapsedSeconds) }}
                             </div>
                             <div class="text-sm text-muted-foreground">
-                                {{ workout.activity_logs?.length || 0 }} activities logged
+                                {{ workout.workout_activities?.length || 0 }} activities logged
                             </div>
                         </div>
                     </div>
@@ -319,10 +393,7 @@ function formatHistoryDate(dateString: string): string {
                                     >
                                         <span class="text-muted-foreground">{{ formatHistoryDate(log.performed_at) }}</span>
                                         <span class="font-medium">
-                                            <span v-if="log.sets && log.reps">{{ log.sets }}x{{ log.reps }}</span>
-                                            <span v-if="log.weight"> @ {{ log.weight }} lbs</span>
-                                            <span v-if="log.duration_seconds"> {{ Math.floor(log.duration_seconds / 60) }}m</span>
-                                            <span v-if="log.distance"> {{ log.distance }} mi</span>
+                                            {{ formatHistorySets(log.sets) }}
                                         </span>
                                     </div>
                                 </div>
@@ -340,13 +411,13 @@ function formatHistoryDate(dateString: string): string {
                                             <VisLine
                                                 :x="(d: { x: number }) => d.x"
                                                 :y="(d: { y: number }) => d.y"
-                                                :color="selectedActivity?.activity_type?.color || 'hsl(var(--primary))'"
+                                                color="hsl(var(--primary))"
                                             />
                                             <VisScatter
                                                 :x="(d: { x: number }) => d.x"
                                                 :y="(d: { y: number }) => d.y"
                                                 :size="3"
-                                                :color="selectedActivity?.activity_type?.color || 'hsl(var(--primary))'"
+                                                color="hsl(var(--primary))"
                                             />
                                             <VisAxis type="y" :numTicks="3" />
                                         </VisXYContainer>
@@ -359,63 +430,89 @@ function formatHistoryDate(dateString: string): string {
                                 <p class="text-sm text-muted-foreground">Loading history...</p>
                             </div>
 
-                            <!-- Metrics -->
-                            <div v-if="selectedActivity && hasAnyMetrics" class="grid grid-cols-2 gap-3">
-                                <div v-if="selectedActivity.tracks_sets" class="space-y-2">
-                                    <Label for="sets">Sets</Label>
-                                    <Input
-                                        id="sets"
-                                        v-model="form.sets"
-                                        type="number"
-                                        min="1"
-                                        placeholder="e.g. 3"
-                                    />
+                            <!-- Sets -->
+                            <div v-if="selectedActivity && hasAnyMetrics" class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-sm font-medium">Sets</h4>
+                                    <Button type="button" variant="outline" size="sm" @click="addSet">
+                                        <Plus class="h-4 w-4 mr-1" />
+                                        Add Set
+                                    </Button>
                                 </div>
 
-                                <div v-if="selectedActivity.tracks_reps" class="space-y-2">
-                                    <Label for="reps">Reps</Label>
-                                    <Input
-                                        id="reps"
-                                        v-model="form.reps"
-                                        type="number"
-                                        min="1"
-                                        placeholder="e.g. 10"
-                                    />
-                                </div>
+                                <div class="space-y-3">
+                                    <div
+                                        v-for="(set, idx) in sets"
+                                        :key="idx"
+                                        class="flex items-start gap-2 p-2 rounded-lg border bg-muted/30"
+                                    >
+                                        <div class="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0 mt-1">
+                                            {{ set.set_number }}
+                                        </div>
 
-                                <div v-if="selectedActivity.tracks_weight" class="space-y-2">
-                                    <Label for="weight">Weight (lbs)</Label>
-                                    <Input
-                                        id="weight"
-                                        v-model="form.weight"
-                                        type="number"
-                                        step="0.5"
-                                        min="0"
-                                        placeholder="e.g. 135"
-                                    />
-                                </div>
+                                        <div class="grid grid-cols-2 gap-2 flex-1">
+                                            <div v-if="selectedActivity.tracks_reps" class="space-y-1">
+                                                <Label :for="`reps-${idx}`" class="text-xs">Reps</Label>
+                                                <Input
+                                                    :id="`reps-${idx}`"
+                                                    v-model="set.reps"
+                                                    type="number"
+                                                    min="1"
+                                                    placeholder="10"
+                                                    class="h-8"
+                                                />
+                                            </div>
 
-                                <div v-if="selectedActivity.tracks_duration" class="space-y-2">
-                                    <Label for="duration_seconds">Duration (min)</Label>
-                                    <Input
-                                        id="duration_seconds"
-                                        v-model="form.duration_seconds"
-                                        type="number"
-                                        min="1"
-                                        placeholder="e.g. 30"
-                                    />
-                                </div>
+                                            <div v-if="selectedActivity.tracks_weight" class="space-y-1">
+                                                <Label :for="`weight-${idx}`" class="text-xs">Weight</Label>
+                                                <Input
+                                                    :id="`weight-${idx}`"
+                                                    v-model="set.weight"
+                                                    type="number"
+                                                    step="0.5"
+                                                    min="0"
+                                                    placeholder="135"
+                                                    class="h-8"
+                                                />
+                                            </div>
 
-                                <div v-if="selectedActivity.tracks_distance" class="space-y-2">
-                                    <Label for="distance">Distance (mi)</Label>
-                                    <Input
-                                        id="distance"
-                                        v-model="form.distance"
-                                        type="number"
-                                        step="0.1"
-                                        min="0"
-                                        placeholder="e.g. 3.5"
-                                    />
+                                            <div v-if="selectedActivity.tracks_duration" class="space-y-1">
+                                                <Label :for="`duration-${idx}`" class="text-xs">Min</Label>
+                                                <Input
+                                                    :id="`duration-${idx}`"
+                                                    v-model="set.duration_seconds"
+                                                    type="number"
+                                                    min="1"
+                                                    placeholder="30"
+                                                    class="h-8"
+                                                />
+                                            </div>
+
+                                            <div v-if="selectedActivity.tracks_distance" class="space-y-1">
+                                                <Label :for="`distance-${idx}`" class="text-xs">Miles</Label>
+                                                <Input
+                                                    :id="`distance-${idx}`"
+                                                    v-model="set.distance"
+                                                    type="number"
+                                                    step="0.1"
+                                                    min="0"
+                                                    placeholder="3.5"
+                                                    class="h-8"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            v-if="sets.length > 1"
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            class="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                                            @click="removeSet(idx)"
+                                        >
+                                            <Trash2 class="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -443,7 +540,7 @@ function formatHistoryDate(dateString: string): string {
                         <CardDescription>Activities completed during this workout</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Table v-if="workout.activity_logs && workout.activity_logs.length > 0">
+                        <Table v-if="workout.workout_activities && workout.workout_activities.length > 0">
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Activity</TableHead>
@@ -452,7 +549,7 @@ function formatHistoryDate(dateString: string): string {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                <TableRow v-for="log in workout.activity_logs" :key="log.id">
+                                <TableRow v-for="log in workout.workout_activities" :key="log.id">
                                     <TableCell class="font-medium">
                                         {{ log.activity?.name }}
                                     </TableCell>

@@ -76,7 +76,7 @@ function formatDate(dateString: string | null) {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Activity</TableHead>
-                                <TableHead>Category</TableHead>
+                                <TableHead>Equipment</TableHead>
                                 <TableHead class="text-center">Participants</TableHead>
                                 <TableHead class="text-center">Total Logs</TableHead>
                                 <TableHead>Last Performed</TableHead>
@@ -89,14 +89,8 @@ function formatDate(dateString: string | null) {
                                     {{ stat.activity.name }}
                                 </TableCell>
                                 <TableCell>
-                                    <Badge
-                                        v-if="stat.activity.activity_type"
-                                        :style="{
-                                            backgroundColor: stat.activity.activity_type.color,
-                                            color: 'white',
-                                        }"
-                                    >
-                                        {{ stat.activity.activity_type.name }}
+                                    <Badge v-if="stat.activity.equipment_type" variant="secondary">
+                                        {{ stat.activity.equipment_type }}
                                     </Badge>
                                     <span v-else class="text-muted-foreground">-</span>
                                 </TableCell>

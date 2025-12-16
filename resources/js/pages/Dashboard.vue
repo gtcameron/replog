@@ -20,10 +20,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import type { Activity, ActivityLog, AppPageProps } from '@/types';
+import type { Activity, WorkoutActivity, AppPageProps } from '@/types';
 
 import { index, create } from '@/actions/App/Http/Controllers/ActivityController';
-import { index as activityTypesIndex } from '@/actions/App/Http/Controllers/ActivityTypeController';
 import { index as logsIndex, create as createLog } from '@/actions/App/Http/Controllers/ActivityLogController';
 import { edit as familyEdit } from '@/actions/App/Http/Controllers/FamilyController';
 import { index as memberStatsIndex } from '@/actions/App/Http/Controllers/MemberStatsController';
@@ -36,16 +35,15 @@ defineProps<{
         email: string | null;
     };
     recentActivities: Activity[];
-    recentLogs: ActivityLog[];
+    recentLogs: WorkoutActivity[];
     activityStats: {
         total: number;
         logsThisWeek: number;
-        byType: { name: string; color: string; count: number }[];
     };
 }>();
 
 const page = usePage<AppPageProps>();
-const activeWorkout = computed(() => page.props.activeWorkout);
+const activeWorkout = computed(() => page.props?.activeWorkout ?? null);
 
 function logout() {
     router.post('/logout');
@@ -59,19 +57,38 @@ function formatDate(dateString: string) {
     });
 }
 
-function formatMetrics(log: ActivityLog): string {
+function formatMetrics(log: WorkoutActivity): string {
+    if (!log.sets || log.sets.length === 0) return '';
+
     const parts = [];
-    if (log.sets && log.reps) {
-        parts.push(`${log.sets}×${log.reps}`);
+    const setCount = log.sets.length;
+    const firstSet = log.sets[0];
+
+    if (firstSet.reps !== null) {
+        if (setCount > 1) {
+            const allSameReps = log.sets.every(s => s.reps === firstSet.reps);
+            if (allSameReps) {
+                parts.push(`${setCount}×${firstSet.reps}`);
+            } else {
+                parts.push(`${setCount} sets`);
+            }
+        } else {
+            parts.push(`${firstSet.reps} reps`);
+        }
     }
-    if (log.weight) {
-        parts.push(`${log.weight} lbs`);
+
+    const maxWeight = Math.max(...log.sets.map(s => s.weight ?? 0));
+    if (maxWeight > 0) {
+        parts.push(`${maxWeight} lbs`);
     }
-    if (log.duration_seconds) {
-        const mins = Math.floor(log.duration_seconds / 60);
+
+    const maxDuration = Math.max(...log.sets.map(s => s.duration_seconds ?? 0));
+    if (maxDuration > 0) {
+        const mins = Math.floor(maxDuration / 60);
         parts.push(`${mins} min`);
     }
-    return parts.join(' · ') || '';
+
+    return parts.join(' · ');
 }
 </script>
 
@@ -106,12 +123,6 @@ function formatMetrics(log: ActivityLog): string {
                             class="text-sm text-muted-foreground hover:text-foreground"
                         >
                             Logs
-                        </Link>
-                        <Link
-                            :href="activityTypesIndex.url()"
-                            class="text-sm text-muted-foreground hover:text-foreground"
-                        >
-                            Categories
                         </Link>
                         <Link
                             :href="familyEdit.url()"
@@ -160,15 +171,9 @@ function formatMetrics(log: ActivityLog): string {
                         <CardTitle class="text-4xl">{{ activityStats.total }}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div class="flex flex-wrap gap-2">
-                            <Badge
-                                v-for="stat in activityStats.byType"
-                                :key="stat.name"
-                                :style="{ backgroundColor: stat.color, color: 'white' }"
-                            >
-                                {{ stat.name }}: {{ stat.count }}
-                            </Badge>
-                        </div>
+                        <Link :href="index.url()">
+                            <Button variant="outline" size="sm" class="w-full">View Activities</Button>
+                        </Link>
                     </CardContent>
                 </Card>
 
@@ -282,11 +287,8 @@ function formatMetrics(log: ActivityLog): string {
                                         {{ activity.muscle_group ?? 'No target area' }}
                                     </p>
                                 </div>
-                                <Badge
-                                    v-if="activity.activity_type"
-                                    :style="{ backgroundColor: activity.activity_type.color, color: 'white' }"
-                                >
-                                    {{ activity.activity_type.name }}
+                                <Badge v-if="activity.equipment_type" variant="secondary">
+                                    {{ activity.equipment_type }}
                                 </Badge>
                             </div>
                         </div>
@@ -325,7 +327,7 @@ function formatMetrics(log: ActivityLog): string {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                <TableHead>Category</TableHead>
+                                <TableHead>Equipment</TableHead>
                                 <TableHead>Target Area</TableHead>
                                 <TableHead class="text-right">Actions</TableHead>
                             </TableRow>
@@ -341,11 +343,8 @@ function formatMetrics(log: ActivityLog): string {
                                     </Link>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge
-                                        v-if="activity.activity_type"
-                                        :style="{ backgroundColor: activity.activity_type.color, color: 'white' }"
-                                    >
-                                        {{ activity.activity_type.name }}
+                                    <Badge v-if="activity.equipment_type" variant="secondary">
+                                        {{ activity.equipment_type }}
                                     </Badge>
                                     <span v-else class="text-muted-foreground">-</span>
                                 </TableCell>

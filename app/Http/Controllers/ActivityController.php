@@ -6,7 +6,6 @@ use App\Enums\EquipmentType;
 use App\Http\Requests\StoreActivityRequest;
 use App\Http\Requests\UpdateActivityRequest;
 use App\Models\Activity;
-use App\Models\ActivityType;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -23,10 +22,6 @@ class ActivityController extends Controller
         return Inertia::render('Activities/Index', [
             'activities' => Activity::query()
                 ->where('family_id', $family->id)
-                ->with('activityType')
-                ->orderBy('name')
-                ->get(),
-            'activityTypes' => ActivityType::where('family_id', $family->id)
                 ->orderBy('name')
                 ->get(),
             'equipmentTypes' => collect(EquipmentType::cases())->map(fn (EquipmentType $type) => [
@@ -41,12 +36,7 @@ class ActivityController extends Controller
      */
     public function create(): Response
     {
-        $family = auth()->user()->family;
-
         return Inertia::render('Activities/Create', [
-            'activityTypes' => ActivityType::where('family_id', $family->id)
-                ->orderBy('name')
-                ->get(),
             'equipmentTypes' => collect(EquipmentType::cases())->map(fn (EquipmentType $type) => [
                 'value' => $type->value,
                 'label' => $type->label(),
@@ -78,7 +68,7 @@ class ActivityController extends Controller
         $this->authorizeActivity($activity);
 
         return Inertia::render('Activities/Show', [
-            'activity' => $activity->load('activityType'),
+            'activity' => $activity,
         ]);
     }
 
@@ -89,13 +79,8 @@ class ActivityController extends Controller
     {
         $this->authorizeActivity($activity);
 
-        $family = auth()->user()->family;
-
         return Inertia::render('Activities/Edit', [
-            'activity' => $activity->load('activityType'),
-            'activityTypes' => ActivityType::where('family_id', $family->id)
-                ->orderBy('name')
-                ->get(),
+            'activity' => $activity,
             'equipmentTypes' => collect(EquipmentType::cases())->map(fn (EquipmentType $type) => [
                 'value' => $type->value,
                 'label' => $type->label(),

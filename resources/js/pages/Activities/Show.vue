@@ -75,12 +75,6 @@ const equipmentLabels: Record<string, string> = {
                         <div>
                             <CardTitle class="text-2xl">{{ activity.name }}</CardTitle>
                             <CardDescription class="mt-2 flex flex-wrap items-center gap-2">
-                                <Badge
-                                    v-if="activity.activity_type"
-                                    :style="{ backgroundColor: activity.activity_type.color, color: 'white' }"
-                                >
-                                    {{ activity.activity_type.name }}
-                                </Badge>
                                 <Badge v-if="activity.equipment_type" variant="secondary">
                                     {{ equipmentLabels[activity.equipment_type] ?? activity.equipment_type }}
                                 </Badge>

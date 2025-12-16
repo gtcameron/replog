@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Plus, Trash2 } from 'lucide-vue-next';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,14 @@ import type { Activity, FamilyMember } from '@/types';
 
 import { store, index } from '@/actions/App/Http/Controllers/ActivityLogController';
 
+interface SetData {
+    set_number: number;
+    reps: string;
+    weight: string;
+    duration_seconds: string;
+    distance: string;
+}
+
 const props = defineProps<{
     activities: Activity[];
     members: FamilyMember[];
@@ -26,15 +35,14 @@ const props = defineProps<{
 
 const today = new Date().toISOString().split('T')[0];
 
+const sets = ref<SetData[]>([
+    { set_number: 1, reps: '', weight: '', duration_seconds: '', distance: '' },
+]);
+
 const form = useForm({
     activity_id: '',
     user_id: props.defaultUserId.toString(),
     performed_at: today,
-    sets: '',
-    reps: '',
-    weight: '',
-    duration_seconds: '',
-    distance: '',
     notes: '',
 });
 
@@ -45,23 +53,47 @@ const selectedActivity = computed(() => {
 
 const hasAnyMetrics = computed(() => {
     if (!selectedActivity.value) return false;
-    return selectedActivity.value.tracks_sets ||
-        selectedActivity.value.tracks_reps ||
+    return selectedActivity.value.tracks_reps ||
         selectedActivity.value.tracks_weight ||
         selectedActivity.value.tracks_duration ||
         selectedActivity.value.tracks_distance;
 });
 
+function addSet() {
+    const lastSet = sets.value[sets.value.length - 1];
+    sets.value.push({
+        set_number: sets.value.length + 1,
+        reps: lastSet?.reps || '',
+        weight: lastSet?.weight || '',
+        duration_seconds: lastSet?.duration_seconds || '',
+        distance: lastSet?.distance || '',
+    });
+}
+
+function removeSet(index: number) {
+    if (sets.value.length > 1) {
+        sets.value.splice(index, 1);
+        sets.value.forEach((set, i) => {
+            set.set_number = i + 1;
+        });
+    }
+}
+
 function submit() {
+    const transformedSets = sets.value.map(set => ({
+        set_number: set.set_number,
+        reps: set.reps ? parseInt(set.reps) : null,
+        weight: set.weight ? parseFloat(set.weight) : null,
+        duration_seconds: set.duration_seconds ? parseInt(set.duration_seconds) * 60 : null,
+        distance: set.distance ? parseFloat(set.distance) : null,
+    }));
+
     form.transform((data) => ({
-        ...data,
         activity_id: parseInt(data.activity_id) || null,
         user_id: parseInt(data.user_id) || null,
-        sets: data.sets ? parseInt(data.sets) : null,
-        reps: data.reps ? parseInt(data.reps) : null,
-        weight: data.weight ? parseFloat(data.weight) : null,
-        duration_seconds: data.duration_seconds ? parseInt(data.duration_seconds) * 60 : null,
-        distance: data.distance ? parseFloat(data.distance) : null,
+        performed_at: data.performed_at,
+        notes: data.notes || null,
+        sets: transformedSets,
     })).post(store.url());
 }
 </script>
@@ -159,78 +191,86 @@ function submit() {
                         </div>
 
                         <div v-if="selectedActivity && hasAnyMetrics" class="border-t pt-6">
-                            <h3 class="text-sm font-medium mb-4">Metrics</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div v-if="selectedActivity.tracks_sets" class="space-y-2">
-                                    <Label for="sets">Sets</Label>
-                                    <Input
-                                        id="sets"
-                                        v-model="form.sets"
-                                        type="number"
-                                        min="1"
-                                        placeholder="e.g. 3"
-                                    />
-                                    <p v-if="form.errors.sets" class="text-sm text-destructive">
-                                        {{ form.errors.sets }}
-                                    </p>
-                                </div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-sm font-medium">Sets</h3>
+                                <Button type="button" variant="outline" size="sm" @click="addSet">
+                                    <Plus class="h-4 w-4 mr-1" />
+                                    Add Set
+                                </Button>
+                            </div>
 
-                                <div v-if="selectedActivity.tracks_reps" class="space-y-2">
-                                    <Label for="reps">Reps</Label>
-                                    <Input
-                                        id="reps"
-                                        v-model="form.reps"
-                                        type="number"
-                                        min="1"
-                                        placeholder="e.g. 10"
-                                    />
-                                    <p v-if="form.errors.reps" class="text-sm text-destructive">
-                                        {{ form.errors.reps }}
-                                    </p>
-                                </div>
+                            <div class="space-y-4">
+                                <div
+                                    v-for="(set, index) in sets"
+                                    :key="index"
+                                    class="flex items-start gap-3 p-3 rounded-lg border bg-muted/30"
+                                >
+                                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-medium shrink-0">
+                                        {{ set.set_number }}
+                                    </div>
 
-                                <div v-if="selectedActivity.tracks_weight" class="space-y-2">
-                                    <Label for="weight">Weight (lbs)</Label>
-                                    <Input
-                                        id="weight"
-                                        v-model="form.weight"
-                                        type="number"
-                                        step="0.5"
-                                        min="0"
-                                        placeholder="e.g. 135"
-                                    />
-                                    <p v-if="form.errors.weight" class="text-sm text-destructive">
-                                        {{ form.errors.weight }}
-                                    </p>
-                                </div>
+                                    <div class="grid grid-cols-2 gap-3 flex-1">
+                                        <div v-if="selectedActivity.tracks_reps" class="space-y-1">
+                                            <Label :for="`reps-${index}`" class="text-xs">Reps</Label>
+                                            <Input
+                                                :id="`reps-${index}`"
+                                                v-model="set.reps"
+                                                type="number"
+                                                min="1"
+                                                placeholder="10"
+                                                class="h-8"
+                                            />
+                                        </div>
 
-                                <div v-if="selectedActivity.tracks_duration" class="space-y-2">
-                                    <Label for="duration_seconds">Duration (minutes)</Label>
-                                    <Input
-                                        id="duration_seconds"
-                                        v-model="form.duration_seconds"
-                                        type="number"
-                                        min="1"
-                                        placeholder="e.g. 30"
-                                    />
-                                    <p v-if="form.errors.duration_seconds" class="text-sm text-destructive">
-                                        {{ form.errors.duration_seconds }}
-                                    </p>
-                                </div>
+                                        <div v-if="selectedActivity.tracks_weight" class="space-y-1">
+                                            <Label :for="`weight-${index}`" class="text-xs">Weight (lbs)</Label>
+                                            <Input
+                                                :id="`weight-${index}`"
+                                                v-model="set.weight"
+                                                type="number"
+                                                step="0.5"
+                                                min="0"
+                                                placeholder="135"
+                                                class="h-8"
+                                            />
+                                        </div>
 
-                                <div v-if="selectedActivity.tracks_distance" class="space-y-2" :class="{ 'col-span-2': !selectedActivity.tracks_duration }">
-                                    <Label for="distance">Distance (miles)</Label>
-                                    <Input
-                                        id="distance"
-                                        v-model="form.distance"
-                                        type="number"
-                                        step="0.1"
-                                        min="0"
-                                        placeholder="e.g. 3.5"
-                                    />
-                                    <p v-if="form.errors.distance" class="text-sm text-destructive">
-                                        {{ form.errors.distance }}
-                                    </p>
+                                        <div v-if="selectedActivity.tracks_duration" class="space-y-1">
+                                            <Label :for="`duration-${index}`" class="text-xs">Duration (min)</Label>
+                                            <Input
+                                                :id="`duration-${index}`"
+                                                v-model="set.duration_seconds"
+                                                type="number"
+                                                min="1"
+                                                placeholder="30"
+                                                class="h-8"
+                                            />
+                                        </div>
+
+                                        <div v-if="selectedActivity.tracks_distance" class="space-y-1">
+                                            <Label :for="`distance-${index}`" class="text-xs">Distance (mi)</Label>
+                                            <Input
+                                                :id="`distance-${index}`"
+                                                v-model="set.distance"
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                placeholder="3.5"
+                                                class="h-8"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        v-if="sets.length > 1"
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        class="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                                        @click="removeSet(index)"
+                                    >
+                                        <Trash2 class="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </div>
                         </div>

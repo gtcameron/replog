@@ -6,7 +6,7 @@ import type { AppPageProps } from '@/types';
 import { show, end } from '@/actions/App/Http/Controllers/WorkoutController';
 
 const page = usePage<AppPageProps>();
-const activeWorkout = computed(() => page.props.activeWorkout);
+const activeWorkout = computed(() => page.props?.activeWorkout ?? null);
 
 const elapsedSeconds = ref(0);
 let timerInterval: ReturnType<typeof setInterval> | null = null;

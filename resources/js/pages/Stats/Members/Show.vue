@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { VisXYContainer, VisLine, VisAxis, VisScatter } from '@unovis/vue';
-import { computed } from 'vue';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
+import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import type { ActivityProgression, FamilyMember } from '@/types';
 
 import { index } from '@/actions/App/Http/Controllers/MemberStatsController';
 
-const props = defineProps<{
+defineProps<{
     member: FamilyMember;
     progressions: ActivityProgression[];
 }>();
@@ -40,7 +38,7 @@ function getChartConfig(activity: ActivityProgression['activity']): ChartConfig 
     return {
         value: {
             label: getMetricLabel(activity),
-            color: activity.activity_type?.color || 'hsl(var(--primary))',
+            color: 'hsl(var(--primary))',
         },
     };
 }
@@ -103,18 +101,7 @@ function getChartData(progression: ActivityProgression) {
                     <CardHeader>
                         <div class="flex items-center justify-between">
                             <div>
-                                <CardTitle class="flex items-center gap-2">
-                                    {{ progression.activity.name }}
-                                    <Badge
-                                        v-if="progression.activity.activity_type"
-                                        :style="{
-                                            backgroundColor: progression.activity.activity_type.color,
-                                            color: 'white',
-                                        }"
-                                    >
-                                        {{ progression.activity.activity_type.name }}
-                                    </Badge>
-                                </CardTitle>
+                                <CardTitle>{{ progression.activity.name }}</CardTitle>
                                 <CardDescription>
                                     {{ progression.totalSessions }} sessions logged
                                 </CardDescription>
@@ -139,13 +126,13 @@ function getChartData(progression: ActivityProgression) {
                                         <VisLine
                                             :x="(d: { x: number }) => d.x"
                                             :y="(d: { y: number }) => d.y"
-                                            :color="progression.activity.activity_type?.color || 'hsl(var(--primary))'"
+                                            color="hsl(var(--primary))"
                                         />
                                         <VisScatter
                                             :x="(d: { x: number }) => d.x"
                                             :y="(d: { y: number }) => d.y"
                                             :size="4"
-                                            :color="progression.activity.activity_type?.color || 'hsl(var(--primary))'"
+                                            color="hsl(var(--primary))"
                                         />
                                         <VisAxis type="x" :tickFormat="(i: number) => getChartData(progression)[i]?.date?.slice(5) || ''" />
                                         <VisAxis type="y" />

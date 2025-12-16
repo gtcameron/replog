@@ -25,12 +25,10 @@ class UpdateActivityRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'activity_type_id' => ['nullable', 'exists:activity_types,id'],
             'equipment_type' => ['nullable', Rule::enum(EquipmentType::class)],
             'muscle_group' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'instructions' => ['nullable', 'string', 'max:5000'],
-            'tracks_sets' => ['boolean'],
             'tracks_reps' => ['boolean'],
             'tracks_weight' => ['boolean'],
             'tracks_duration' => ['boolean'],

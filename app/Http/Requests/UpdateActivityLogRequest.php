@@ -25,12 +25,14 @@ class UpdateActivityLogRequest extends FormRequest
             'activity_id' => ['required', 'exists:activities,id'],
             'user_id' => ['required', 'exists:users,id'],
             'performed_at' => ['required', 'date'],
-            'sets' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'reps' => ['nullable', 'integer', 'min:1', 'max:1000'],
-            'weight' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
-            'duration_seconds' => ['nullable', 'integer', 'min:1', 'max:86400'],
-            'distance' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'sets' => ['required', 'array', 'min:1'],
+            'sets.*.set_number' => ['required', 'integer', 'min:1'],
+            'sets.*.reps' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'sets.*.weight' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
+            'sets.*.duration_seconds' => ['nullable', 'integer', 'min:1', 'max:86400'],
+            'sets.*.distance' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'sets.*.notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -46,6 +48,8 @@ class UpdateActivityLogRequest extends FormRequest
             'user_id.exists' => 'The selected family member does not exist.',
             'performed_at.required' => 'Please enter when the activity was performed.',
             'performed_at.date' => 'Please enter a valid date.',
+            'sets.required' => 'At least one set is required.',
+            'sets.min' => 'At least one set is required.',
         ];
     }
 }

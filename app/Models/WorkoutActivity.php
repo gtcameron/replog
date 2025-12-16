@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ActivityLog extends Model
+class WorkoutActivity extends Model
 {
-    /** @use HasFactory<\Database\Factories\ActivityLogFactory> */
+    /** @use HasFactory<\Database\Factories\WorkoutActivityFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -18,11 +19,6 @@ class ActivityLog extends Model
         'user_id',
         'logged_by_id',
         'performed_at',
-        'sets',
-        'reps',
-        'weight',
-        'duration_seconds',
-        'distance',
         'notes',
     ];
 
@@ -33,8 +29,6 @@ class ActivityLog extends Model
     {
         return [
             'performed_at' => 'date',
-            'weight' => 'decimal:2',
-            'distance' => 'decimal:2',
         ];
     }
 
@@ -75,12 +69,22 @@ class ActivityLog extends Model
     }
 
     /**
-     * The workout this log belongs to (if any).
+     * The workout this activity belongs to (if any).
      *
      * @return BelongsTo<Workout, $this>
      */
     public function workout(): BelongsTo
     {
         return $this->belongsTo(Workout::class);
+    }
+
+    /**
+     * The sets performed for this activity.
+     *
+     * @return HasMany<ActivitySet, $this>
+     */
+    public function sets(): HasMany
+    {
+        return $this->hasMany(ActivitySet::class)->orderBy('set_number');
     }
 }

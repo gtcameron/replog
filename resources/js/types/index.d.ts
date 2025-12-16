@@ -2,6 +2,37 @@ export interface Auth {
     user: User;
 }
 
+export interface ActivitySet {
+    id: number;
+    workout_activity_id: number;
+    set_number: number;
+    reps: number | null;
+    weight: number | null;
+    duration_seconds: number | null;
+    distance: number | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WorkoutActivity {
+    id: number;
+    family_id: number;
+    workout_id: number | null;
+    workout?: Workout;
+    activity_id: number;
+    activity?: Activity;
+    user_id: number;
+    user?: User;
+    logged_by_id: number;
+    logged_by?: User;
+    performed_at: string;
+    notes: string | null;
+    sets?: ActivitySet[];
+    created_at: string;
+    updated_at: string;
+}
+
 export interface Workout {
     id: number;
     family_id: number;
@@ -13,8 +44,8 @@ export interface Workout {
     started_at: string;
     ended_at: string | null;
     notes: string | null;
-    activity_logs?: ActivityLog[];
-    activity_logs_count?: number;
+    workout_activities?: WorkoutActivity[];
+    workout_activities_count?: number;
     created_at: string;
     updated_at: string;
 }
@@ -55,55 +86,18 @@ export interface FamilyMember {
     updated_at: string;
 }
 
-export interface ActivityType {
-    id: number;
-    family_id: number;
-    name: string;
-    description: string | null;
-    color: string;
-    icon: string | null;
-    activities_count?: number;
-    created_at: string;
-    updated_at: string;
-}
-
 export interface Activity {
     id: number;
     family_id: number;
     name: string;
-    activity_type_id: number | null;
-    activity_type?: ActivityType | null;
     equipment_type: string | null;
     muscle_group: string | null;
     description: string | null;
     instructions: string | null;
-    tracks_sets: boolean;
     tracks_reps: boolean;
     tracks_weight: boolean;
     tracks_duration: boolean;
     tracks_distance: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
-export interface ActivityLog {
-    id: number;
-    family_id: number;
-    workout_id: number | null;
-    workout?: Workout;
-    activity_id: number;
-    activity?: Activity;
-    user_id: number;
-    user?: User;
-    logged_by_id: number;
-    logged_by?: User;
-    performed_at: string;
-    sets: number | null;
-    reps: number | null;
-    weight: number | null;
-    duration_seconds: number | null;
-    distance: number | null;
-    notes: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -170,18 +164,22 @@ export interface ComparisonChartData {
 }
 
 // Workout activity history
-export interface ActivityHistoryEntry {
-    id: number;
-    performed_at: string;
-    sets: number | null;
+export interface ActivityHistorySetEntry {
+    set_number: number;
     reps: number | null;
     weight: number | null;
     duration_seconds: number | null;
     distance: number | null;
 }
 
+export interface ActivityHistoryEntry {
+    id: number;
+    performed_at: string;
+    sets: ActivityHistorySetEntry[];
+}
+
 export interface ActivityHistoryData {
     recentLogs: ActivityHistoryEntry[];
     chartData: ProgressionPoint[];
-    activity: Pick<Activity, 'id' | 'name' | 'tracks_sets' | 'tracks_reps' | 'tracks_weight' | 'tracks_duration' | 'tracks_distance'>;
+    activity: Pick<Activity, 'id' | 'name' | 'tracks_reps' | 'tracks_weight' | 'tracks_duration' | 'tracks_distance'>;
 }
