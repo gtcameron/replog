@@ -3,15 +3,13 @@
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\ActivityStatsController;
-use App\Http\Controllers\ActivityTypeController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\FamilyMemberController;
 use App\Http\Controllers\MemberStatsController;
 use App\Http\Controllers\WorkoutActivityLogController;
 use App\Http\Controllers\WorkoutController;
 use App\Models\Activity;
-use App\Models\ActivityLog;
-use App\Models\ActivityType;
+use App\Models\WorkoutActivity;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -31,44 +29,31 @@ Route::middleware(['auth'])->group(function () {
             'user' => auth()->user(),
             'recentActivities' => Activity::query()
                 ->where('family_id', $family->id)
-                ->with('activityType')
                 ->latest()
                 ->take(5)
                 ->get(),
-            'recentLogs' => ActivityLog::query()
+            'recentLogs' => WorkoutActivity::query()
                 ->where('family_id', $family->id)
-                ->with(['activity', 'user'])
+                ->with(['activity', 'user', 'sets'])
                 ->orderByDesc('performed_at')
                 ->orderByDesc('created_at')
                 ->take(5)
                 ->get(),
             'activityStats' => [
                 'total' => Activity::where('family_id', $family->id)->count(),
-                'logsThisWeek' => ActivityLog::where('family_id', $family->id)
+                'logsThisWeek' => WorkoutActivity::where('family_id', $family->id)
                     ->where('performed_at', '>=', now()->startOfWeek())
                     ->count(),
-                'byType' => ActivityType::query()
-                    ->where('family_id', $family->id)
-                    ->withCount('activities')
-                    ->orderBy('name')
-                    ->get()
-                    ->filter(fn (ActivityType $type) => $type->activities_count > 0)
-                    ->map(fn (ActivityType $type) => [
-                        'name' => $type->name,
-                        'color' => $type->color,
-                        'count' => $type->activities_count,
-                    ])
-                    ->values(),
             ],
         ]);
     })->name('dashboard');
 
     // Activity resources
     Route::resource('activities', ActivityController::class);
-    Route::resource('activity-types', ActivityTypeController::class)->except(['show']);
 
     // Activity logs
-    Route::resource('activity-logs', ActivityLogController::class);
+    Route::resource('activity-logs', ActivityLogController::class)
+        ->parameters(['activity-logs' => 'activityLog:id']);
 
     // Workouts
     Route::resource('workouts', WorkoutController::class);

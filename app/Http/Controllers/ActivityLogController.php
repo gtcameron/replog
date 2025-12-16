@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreActivityLogRequest;
 use App\Http\Requests\UpdateActivityLogRequest;
 use App\Models\Activity;
-use App\Models\ActivityLog;
+use App\Models\WorkoutActivity;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,9 +20,9 @@ class ActivityLogController extends Controller
         $family = auth()->user()->family;
 
         return Inertia::render('ActivityLogs/Index', [
-            'logs' => ActivityLog::query()
+            'logs' => WorkoutActivity::query()
                 ->where('family_id', $family->id)
-                ->with(['activity', 'user', 'loggedBy'])
+                ->with(['activity', 'user', 'loggedBy', 'sets'])
                 ->orderByDesc('performed_at')
                 ->orderByDesc('created_at')
                 ->paginate(20),
@@ -42,7 +42,6 @@ class ActivityLogController extends Controller
 
         return Inertia::render('ActivityLogs/Create', [
             'activities' => Activity::where('family_id', $family->id)
-                ->with('activityType')
                 ->orderBy('name')
                 ->get(),
             'members' => $family->members()->orderBy('name')->get(),
@@ -58,19 +57,18 @@ class ActivityLogController extends Controller
         $family = auth()->user()->family;
         $data = $request->validated();
 
-        ActivityLog::create([
+        $workoutActivity = WorkoutActivity::create([
             'family_id' => $family->id,
             'activity_id' => $data['activity_id'],
             'user_id' => $data['user_id'],
             'logged_by_id' => auth()->id(),
             'performed_at' => $data['performed_at'],
-            'sets' => $data['sets'] ?? null,
-            'reps' => $data['reps'] ?? null,
-            'weight' => $data['weight'] ?? null,
-            'duration_seconds' => $data['duration_seconds'] ?? null,
-            'distance' => $data['distance'] ?? null,
             'notes' => $data['notes'] ?? null,
         ]);
+
+        foreach ($data['sets'] as $setData) {
+            $workoutActivity->sets()->create($setData);
+        }
 
         return redirect()->route('activity-logs.index')
             ->with('success', 'Activity logged successfully.');
@@ -79,28 +77,27 @@ class ActivityLogController extends Controller
     /**
      * Display the specified activity log.
      */
-    public function show(ActivityLog $activityLog): Response
+    public function show(WorkoutActivity $activityLog): Response
     {
-        $this->authorizeActivityLog($activityLog);
+        $this->authorizeWorkoutActivity($activityLog);
 
         return Inertia::render('ActivityLogs/Show', [
-            'log' => $activityLog->load(['activity', 'user', 'loggedBy']),
+            'log' => $activityLog->load(['activity', 'user', 'loggedBy', 'sets']),
         ]);
     }
 
     /**
      * Show the form for editing an activity log.
      */
-    public function edit(ActivityLog $activityLog): Response
+    public function edit(WorkoutActivity $activityLog): Response
     {
-        $this->authorizeActivityLog($activityLog);
+        $this->authorizeWorkoutActivity($activityLog);
 
         $family = auth()->user()->family;
 
         return Inertia::render('ActivityLogs/Edit', [
-            'log' => $activityLog->load(['activity', 'user']),
+            'log' => $activityLog->load(['activity', 'user', 'sets']),
             'activities' => Activity::where('family_id', $family->id)
-                ->with('activityType')
                 ->orderBy('name')
                 ->get(),
             'members' => $family->members()->orderBy('name')->get(),
@@ -110,11 +107,24 @@ class ActivityLogController extends Controller
     /**
      * Update the specified activity log.
      */
-    public function update(UpdateActivityLogRequest $request, ActivityLog $activityLog): RedirectResponse
+    public function update(UpdateActivityLogRequest $request, WorkoutActivity $activityLog): RedirectResponse
     {
-        $this->authorizeActivityLog($activityLog);
+        $this->authorizeWorkoutActivity($activityLog);
 
-        $activityLog->update($request->validated());
+        $data = $request->validated();
+
+        $activityLog->update([
+            'activity_id' => $data['activity_id'],
+            'user_id' => $data['user_id'],
+            'performed_at' => $data['performed_at'],
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        // Delete existing sets and recreate
+        $activityLog->sets()->delete();
+        foreach ($data['sets'] as $setData) {
+            $activityLog->sets()->create($setData);
+        }
 
         return redirect()->route('activity-logs.index')
             ->with('success', 'Activity log updated successfully.');
@@ -123,9 +133,9 @@ class ActivityLogController extends Controller
     /**
      * Remove the specified activity log.
      */
-    public function destroy(ActivityLog $activityLog): RedirectResponse
+    public function destroy(WorkoutActivity $activityLog): RedirectResponse
     {
-        $this->authorizeActivityLog($activityLog);
+        $this->authorizeWorkoutActivity($activityLog);
 
         $activityLog->delete();
 
@@ -134,11 +144,11 @@ class ActivityLogController extends Controller
     }
 
     /**
-     * Authorize that the activity log belongs to the current user's family.
+     * Authorize that the workout activity belongs to the current user's family.
      */
-    private function authorizeActivityLog(ActivityLog $activityLog): void
+    private function authorizeWorkoutActivity(WorkoutActivity $workoutActivity): void
     {
-        if ($activityLog->family_id !== auth()->user()->family_id) {
+        if ($workoutActivity->family_id !== auth()->user()->family_id) {
             abort(403, 'This activity log does not belong to your family.');
         }
     }

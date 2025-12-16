@@ -32,7 +32,7 @@ defineProps<{
 }>();
 
 const page = usePage<AppPageProps>();
-const activeWorkout = computed(() => page.props.activeWorkout);
+const activeWorkout = computed(() => page.props?.activeWorkout ?? null);
 
 const workoutToDelete = ref<Workout | null>(null);
 
@@ -145,7 +145,7 @@ function formatDuration(startedAt: string, endedAt: string | null): string {
                                     {{ formatDuration(workout.started_at, workout.ended_at) }}
                                 </TableCell>
                                 <TableCell>
-                                    {{ workout.activity_logs_count || 0 }}
+                                    {{ workout.workout_activities_count || 0 }}
                                 </TableCell>
                                 <TableCell>
                                     <Badge v-if="!workout.ended_at" variant="default">

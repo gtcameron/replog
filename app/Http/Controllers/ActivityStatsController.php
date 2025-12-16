@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Activity;
-use App\Models\ActivityLog;
+use App\Models\WorkoutActivity;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,13 +19,12 @@ class ActivityStatsController extends Controller
 
         $activities = Activity::query()
             ->where('family_id', $family->id)
-            ->with('activityType')
-            ->withCount('logs')
+            ->withCount('workoutActivities')
             ->orderBy('name')
             ->get();
 
         $activityStats = $activities->map(function (Activity $activity) use ($family) {
-            $logs = ActivityLog::query()
+            $logs = WorkoutActivity::query()
                 ->where('family_id', $family->id)
                 ->where('activity_id', $activity->id)
                 ->get();
@@ -53,10 +52,10 @@ class ActivityStatsController extends Controller
         $family = auth()->user()->family;
         $members = $family->members()->orderBy('name')->get();
 
-        $logs = ActivityLog::query()
+        $logs = WorkoutActivity::query()
             ->where('family_id', $family->id)
             ->where('activity_id', $activity->id)
-            ->with('user')
+            ->with(['user', 'sets'])
             ->orderBy('performed_at')
             ->get();
 
@@ -67,7 +66,7 @@ class ActivityStatsController extends Controller
         $chartData = $this->buildComparisonChart($logs, $activity, $members);
 
         return Inertia::render('Stats/Activities/Show', [
-            'activity' => $activity->load('activityType'),
+            'activity' => $activity,
             'leaderboard' => $leaderboard,
             'chartData' => $chartData,
             'members' => $members,
@@ -142,24 +141,43 @@ class ActivityStatsController extends Controller
     }
 
     /**
-     * Get the best/primary value from an activity log based on what the activity tracks.
+     * Get the best/primary value from a workout activity based on what the activity tracks.
+     * Uses max value across all sets.
      */
-    private function getBestValue(ActivityLog $log, Activity $activity): ?float
+    private function getBestValue(WorkoutActivity $log, Activity $activity): ?float
     {
-        if ($activity->tracks_weight && $log->weight) {
-            return (float) $log->weight;
+        $sets = $log->sets;
+
+        if ($sets->isEmpty()) {
+            return null;
         }
 
-        if ($activity->tracks_duration && $log->duration_seconds) {
-            return (float) $log->duration_seconds;
+        if ($activity->tracks_weight) {
+            $maxWeight = $sets->max('weight');
+            if ($maxWeight) {
+                return (float) $maxWeight;
+            }
         }
 
-        if ($activity->tracks_distance && $log->distance) {
-            return (float) $log->distance;
+        if ($activity->tracks_duration) {
+            $maxDuration = $sets->max('duration_seconds');
+            if ($maxDuration) {
+                return (float) $maxDuration;
+            }
         }
 
-        if ($activity->tracks_reps && $log->reps) {
-            return (float) $log->reps;
+        if ($activity->tracks_distance) {
+            $maxDistance = $sets->max('distance');
+            if ($maxDistance) {
+                return (float) $maxDistance;
+            }
+        }
+
+        if ($activity->tracks_reps) {
+            $maxReps = $sets->max('reps');
+            if ($maxReps) {
+                return (float) $maxReps;
+            }
         }
 
         return null;

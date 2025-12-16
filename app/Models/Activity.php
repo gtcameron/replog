@@ -16,12 +16,10 @@ class Activity extends Model
     protected $fillable = [
         'name',
         'family_id',
-        'activity_type_id',
         'equipment_type',
         'muscle_group',
         'description',
         'instructions',
-        'tracks_sets',
         'tracks_reps',
         'tracks_weight',
         'tracks_duration',
@@ -35,20 +33,11 @@ class Activity extends Model
     {
         return [
             'equipment_type' => EquipmentType::class,
-            'tracks_sets' => 'boolean',
             'tracks_reps' => 'boolean',
             'tracks_weight' => 'boolean',
             'tracks_duration' => 'boolean',
             'tracks_distance' => 'boolean',
         ];
-    }
-
-    /**
-     * @return BelongsTo<ActivityType, $this>
-     */
-    public function activityType(): BelongsTo
-    {
-        return $this->belongsTo(ActivityType::class);
     }
 
     /**
@@ -60,10 +49,10 @@ class Activity extends Model
     }
 
     /**
-     * @return HasMany<ActivityLog, $this>
+     * @return HasMany<WorkoutActivity, $this>
      */
-    public function logs(): HasMany
+    public function workoutActivities(): HasMany
     {
-        return $this->hasMany(ActivityLog::class);
+        return $this->hasMany(WorkoutActivity::class);
     }
 }

@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Activity;
-use App\Models\ActivityType;
 use App\Models\Family;
 use App\Models\User;
 
@@ -53,44 +52,6 @@ it('cannot update activity from another family', function () {
 
     $response = $this->actingAs($this->user)->put("/activities/{$otherActivity->id}", [
         'name' => 'Hacked Name',
-    ]);
-
-    $response->assertForbidden();
-});
-
-it('can only see activity types from own family', function () {
-    $ownType = ActivityType::factory()->forFamily($this->family)->create();
-    $otherType = ActivityType::factory()->forFamily($this->otherFamily)->create();
-
-    $response = $this->actingAs($this->user)->get('/activity-types');
-
-    $response->assertSuccessful();
-    $response->assertInertia(fn ($page) => $page
-        ->component('ActivityTypes/Index')
-        ->has('activityTypes', 1)
-        ->where('activityTypes.0.id', $ownType->id)
-    );
-});
-
-it('creates activity type with correct family_id', function () {
-    $response = $this->actingAs($this->user)->post('/activity-types', [
-        'name' => 'New Type',
-        'color' => '#ff0000',
-    ]);
-
-    $response->assertRedirect('/activity-types');
-
-    $this->assertDatabaseHas('activity_types', [
-        'name' => 'New Type',
-        'family_id' => $this->family->id,
-    ]);
-});
-
-it('cannot update activity type from another family', function () {
-    $otherType = ActivityType::factory()->forFamily($this->otherFamily)->create();
-
-    $response = $this->actingAs($this->user)->put("/activity-types/{$otherType->id}", [
-        'name' => 'Hacked Type',
     ]);
 
     $response->assertForbidden();

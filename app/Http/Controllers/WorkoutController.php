@@ -23,7 +23,7 @@ class WorkoutController extends Controller
             'workouts' => Workout::query()
                 ->where('family_id', $family->id)
                 ->with(['user'])
-                ->withCount('activityLogs')
+                ->withCount('workoutActivities')
                 ->orderByDesc('started_at')
                 ->paginate(20),
         ]);
@@ -71,9 +71,8 @@ class WorkoutController extends Controller
         $family = auth()->user()->family;
 
         return Inertia::render('Workouts/Show', [
-            'workout' => $workout->load(['user', 'activityLogs.activity']),
+            'workout' => $workout->load(['user', 'workoutActivities.activity', 'workoutActivities.sets']),
             'activities' => Activity::where('family_id', $family->id)
-                ->with('activityType')
                 ->orderBy('name')
                 ->get(),
             'members' => $family->members()->orderBy('name')->get(),
@@ -90,7 +89,7 @@ class WorkoutController extends Controller
         $family = auth()->user()->family;
 
         return Inertia::render('Workouts/Edit', [
-            'workout' => $workout->load(['user', 'activityLogs.activity']),
+            'workout' => $workout->load(['user', 'workoutActivities.activity', 'workoutActivities.sets']),
             'members' => $family->members()->orderBy('name')->get(),
         ]);
     }

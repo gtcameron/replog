@@ -62,11 +62,11 @@ class Workout extends Model
     }
 
     /**
-     * @return HasMany<ActivityLog, $this>
+     * @return HasMany<WorkoutActivity, $this>
      */
-    public function activityLogs(): HasMany
+    public function workoutActivities(): HasMany
     {
-        return $this->hasMany(ActivityLog::class);
+        return $this->hasMany(WorkoutActivity::class);
     }
 
     /**

@@ -14,23 +14,20 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { ActivityType, EquipmentType } from '@/types';
+import type { EquipmentType } from '@/types';
 
 import { store, index } from '@/actions/App/Http/Controllers/ActivityController';
 
 defineProps<{
-    activityTypes: ActivityType[];
     equipmentTypes: EquipmentType[];
 }>();
 
 const form = useForm({
     name: '',
-    activity_type_id: '',
     equipment_type: '',
     muscle_group: '',
     description: '',
     instructions: '',
-    tracks_sets: false,
     tracks_reps: false,
     tracks_weight: false,
     tracks_duration: false,
@@ -40,8 +37,7 @@ const form = useForm({
 function submit() {
     form.transform((data) => ({
         ...data,
-        activity_type_id: data.activity_type_id || null,
-        equipment_type: data.equipment_type || null,
+        equipment_type: data.equipment_type && data.equipment_type !== '__none__' ? data.equipment_type : null,
     })).post(store.url());
 }
 </script>
@@ -96,35 +92,13 @@ function submit() {
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="activity_type_id">Category</Label>
-                            <Select v-model="form.activity_type_id">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a category (optional)" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="">No category</SelectItem>
-                                    <SelectItem
-                                        v-for="type in activityTypes"
-                                        :key="type.id"
-                                        :value="type.id.toString()"
-                                    >
-                                        {{ type.name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p v-if="form.errors.activity_type_id" class="text-sm text-destructive">
-                                {{ form.errors.activity_type_id }}
-                            </p>
-                        </div>
-
-                        <div class="space-y-2">
                             <Label for="equipment_type">Equipment Type</Label>
                             <Select v-model="form.equipment_type">
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select equipment (optional)" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">No equipment</SelectItem>
+                                    <SelectItem value="__none__">No equipment</SelectItem>
                                     <SelectItem
                                         v-for="type in equipmentTypes"
                                         :key="type.value"
@@ -184,14 +158,6 @@ function submit() {
                                 Select which metrics to track when logging this activity.
                             </p>
                             <div class="grid grid-cols-2 gap-4">
-                                <div class="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="tracks_sets"
-                                        :checked="form.tracks_sets"
-                                        @update:checked="form.tracks_sets = $event"
-                                    />
-                                    <Label for="tracks_sets" class="font-normal">Sets</Label>
-                                </div>
                                 <div class="flex items-center space-x-2">
                                     <Checkbox
                                         id="tracks_reps"

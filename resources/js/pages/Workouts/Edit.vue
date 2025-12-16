@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const page = usePage<AppPageProps>();
-const activeWorkout = computed(() => page.props.activeWorkout);
+const activeWorkout = computed(() => page.props?.activeWorkout ?? null);
 
 function formatDateTimeLocal(dateString: string | null): string {
     if (!dateString) return '';

@@ -14,24 +14,21 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { Activity, ActivityType, EquipmentType } from '@/types';
+import type { Activity, EquipmentType } from '@/types';
 
 import { update, index } from '@/actions/App/Http/Controllers/ActivityController';
 
 const props = defineProps<{
     activity: Activity;
-    activityTypes: ActivityType[];
     equipmentTypes: EquipmentType[];
 }>();
 
 const form = useForm({
     name: props.activity.name,
-    activity_type_id: props.activity.activity_type_id?.toString() ?? '',
-    equipment_type: props.activity.equipment_type ?? '',
+    equipment_type: props.activity.equipment_type ?? '__none__',
     muscle_group: props.activity.muscle_group ?? '',
     description: props.activity.description ?? '',
     instructions: props.activity.instructions ?? '',
-    tracks_sets: props.activity.tracks_sets,
     tracks_reps: props.activity.tracks_reps,
     tracks_weight: props.activity.tracks_weight,
     tracks_duration: props.activity.tracks_duration,
@@ -41,8 +38,7 @@ const form = useForm({
 function submit() {
     form.transform((data) => ({
         ...data,
-        activity_type_id: data.activity_type_id || null,
-        equipment_type: data.equipment_type || null,
+        equipment_type: data.equipment_type && data.equipment_type !== '__none__' ? data.equipment_type : null,
     })).put(update.url(props.activity.id));
 }
 </script>
@@ -97,35 +93,13 @@ function submit() {
                         </div>
 
                         <div class="space-y-2">
-                            <Label for="activity_type_id">Category</Label>
-                            <Select v-model="form.activity_type_id">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a category (optional)" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="">No category</SelectItem>
-                                    <SelectItem
-                                        v-for="type in activityTypes"
-                                        :key="type.id"
-                                        :value="type.id.toString()"
-                                    >
-                                        {{ type.name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p v-if="form.errors.activity_type_id" class="text-sm text-destructive">
-                                {{ form.errors.activity_type_id }}
-                            </p>
-                        </div>
-
-                        <div class="space-y-2">
                             <Label for="equipment_type">Equipment Type</Label>
                             <Select v-model="form.equipment_type">
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select equipment (optional)" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">No equipment</SelectItem>
+                                    <SelectItem value="__none__">No equipment</SelectItem>
                                     <SelectItem
                                         v-for="type in equipmentTypes"
                                         :key="type.value"
@@ -185,14 +159,6 @@ function submit() {
                                 Select which metrics to track when logging this activity.
                             </p>
                             <div class="grid grid-cols-2 gap-4">
-                                <div class="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="tracks_sets"
-                                        :checked="form.tracks_sets"
-                                        @update:checked="form.tracks_sets = $event"
-                                    />
-                                    <Label for="tracks_sets" class="font-normal">Sets</Label>
-                                </div>
                                 <div class="flex items-center space-x-2">
                                     <Checkbox
                                         id="tracks_reps"

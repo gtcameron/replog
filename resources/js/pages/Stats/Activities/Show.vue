@@ -3,7 +3,6 @@ import { Head, Link } from '@inertiajs/vue3';
 import { VisXYContainer, VisLine, VisAxis, VisScatter } from '@unovis/vue';
 import { computed } from 'vue';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
@@ -97,17 +96,6 @@ const transformedChartData = computed(() => {
     });
 });
 
-// Create y accessor functions for each member
-const yAccessors = computed(() => {
-    return props.chartData.series.map((series) => {
-        return (d: Record<string, number | null>) => d[series.memberName] as number | null;
-    });
-});
-
-const lineColors = computed(() => {
-    return props.chartData.series.map((_, index) => memberColors[index % memberColors.length]);
-});
-
 const hasChartData = computed(() => {
     return props.chartData.dates.length > 0 && props.chartData.series.length > 0;
 });
@@ -144,17 +132,8 @@ const hasChartData = computed(() => {
         <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
             <div class="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 class="flex items-center gap-3 text-2xl font-semibold text-foreground">
+                    <h1 class="text-2xl font-semibold text-foreground">
                         {{ activity.name }}
-                        <Badge
-                            v-if="activity.activity_type"
-                            :style="{
-                                backgroundColor: activity.activity_type.color,
-                                color: 'white',
-                            }"
-                        >
-                            {{ activity.activity_type.name }}
-                        </Badge>
                     </h1>
                     <p class="mt-1 text-muted-foreground">
                         Leaderboard and performance comparison

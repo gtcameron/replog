@@ -23,12 +23,14 @@ class StoreWorkoutActivityLogRequest extends FormRequest
     {
         return [
             'activity_id' => ['required', 'exists:activities,id'],
-            'sets' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'reps' => ['nullable', 'integer', 'min:1', 'max:1000'],
-            'weight' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
-            'duration_seconds' => ['nullable', 'integer', 'min:1', 'max:86400'],
-            'distance' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'sets' => ['required', 'array', 'min:1'],
+            'sets.*.set_number' => ['required', 'integer', 'min:1'],
+            'sets.*.reps' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'sets.*.weight' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
+            'sets.*.duration_seconds' => ['nullable', 'integer', 'min:1', 'max:86400'],
+            'sets.*.distance' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'sets.*.notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -40,6 +42,8 @@ class StoreWorkoutActivityLogRequest extends FormRequest
         return [
             'activity_id.required' => 'Please select an activity.',
             'activity_id.exists' => 'The selected activity does not exist.',
+            'sets.required' => 'At least one set is required.',
+            'sets.min' => 'At least one set is required.',
         ];
     }
 }

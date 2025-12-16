@@ -59,23 +59,23 @@ class User extends Authenticatable
     }
 
     /**
-     * Activity logs where this user performed the activity.
+     * Workout activities where this user performed the activity.
      *
-     * @return HasMany<ActivityLog, $this>
+     * @return HasMany<WorkoutActivity, $this>
      */
-    public function activityLogs(): HasMany
+    public function workoutActivities(): HasMany
     {
-        return $this->hasMany(ActivityLog::class);
+        return $this->hasMany(WorkoutActivity::class);
     }
 
     /**
-     * Activity logs that this user created/logged.
+     * Workout activities that this user created/logged.
      *
-     * @return HasMany<ActivityLog, $this>
+     * @return HasMany<WorkoutActivity, $this>
      */
-    public function loggedActivities(): HasMany
+    public function loggedWorkoutActivities(): HasMany
     {
-        return $this->hasMany(ActivityLog::class, 'logged_by_id');
+        return $this->hasMany(WorkoutActivity::class, 'logged_by_id');
     }
 
     /**

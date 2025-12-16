@@ -32,19 +32,11 @@ class Family extends Model
     }
 
     /**
-     * @return HasMany<ActivityType, $this>
+     * @return HasMany<WorkoutActivity, $this>
      */
-    public function activityTypes(): HasMany
+    public function workoutActivities(): HasMany
     {
-        return $this->hasMany(ActivityType::class);
-    }
-
-    /**
-     * @return HasMany<ActivityLog, $this>
-     */
-    public function activityLogs(): HasMany
-    {
-        return $this->hasMany(ActivityLog::class);
+        return $this->hasMany(WorkoutActivity::class);
     }
 
     /**

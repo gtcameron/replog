@@ -22,19 +22,19 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import type { Activity, ActivityLog, FamilyMember, PaginatedData } from '@/types';
+import type { Activity, WorkoutActivity, FamilyMember, PaginatedData } from '@/types';
 
 import { create, edit, destroy } from '@/actions/App/Http/Controllers/ActivityLogController';
 
 defineProps<{
-    logs: PaginatedData<ActivityLog>;
+    logs: PaginatedData<WorkoutActivity>;
     activities: Activity[];
     members: FamilyMember[];
 }>();
 
-const logToDelete = ref<ActivityLog | null>(null);
+const logToDelete = ref<WorkoutActivity | null>(null);
 
-function confirmDelete(log: ActivityLog) {
+function confirmDelete(log: WorkoutActivity) {
     logToDelete.value = log;
 }
 
@@ -53,22 +53,46 @@ function formatDate(dateString: string) {
     });
 }
 
-function formatMetrics(log: ActivityLog): string {
+function formatMetrics(log: WorkoutActivity): string {
+    if (!log.sets || log.sets.length === 0) return '—';
+
+    const setCount = log.sets.length;
+    const firstSet = log.sets[0];
+
     const parts = [];
-    if (log.sets && log.reps) {
-        parts.push(`${log.sets}×${log.reps}`);
+
+    if (firstSet.reps !== null) {
+        if (setCount > 1) {
+            const allSameReps = log.sets.every(s => s.reps === firstSet.reps);
+            if (allSameReps) {
+                parts.push(`${setCount}×${firstSet.reps}`);
+            } else {
+                parts.push(`${setCount} sets`);
+            }
+        } else {
+            parts.push(`${firstSet.reps} reps`);
+        }
+    } else if (setCount > 1) {
+        parts.push(`${setCount} sets`);
     }
-    if (log.weight) {
-        parts.push(`${log.weight} lbs`);
+
+    const maxWeight = Math.max(...log.sets.map(s => s.weight ?? 0));
+    if (maxWeight > 0) {
+        parts.push(`${maxWeight} lbs`);
     }
-    if (log.duration_seconds) {
-        const mins = Math.floor(log.duration_seconds / 60);
-        const secs = log.duration_seconds % 60;
+
+    const maxDuration = Math.max(...log.sets.map(s => s.duration_seconds ?? 0));
+    if (maxDuration > 0) {
+        const mins = Math.floor(maxDuration / 60);
+        const secs = maxDuration % 60;
         parts.push(secs > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${mins} min`);
     }
-    if (log.distance) {
-        parts.push(`${log.distance} mi`);
+
+    const maxDistance = Math.max(...log.sets.map(s => s.distance ?? 0));
+    if (maxDistance > 0) {
+        parts.push(`${maxDistance} mi`);
     }
+
     return parts.join(' · ') || '—';
 }
 </script>
