@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('started_by_id')->constrained('users')->cascadeOnDelete();
             $table->string('name')->nullable();
-            $table->timestamp('started_at');
+            $table->timestamp('started_at')->nullable();
             $table->timestamp('ended_at')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();

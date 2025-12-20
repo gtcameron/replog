@@ -11,23 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('activity_logs', function (Blueprint $table) {
+        Schema::create('workout_activities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('family_id')->constrained()->cascadeOnDelete();
             $table->foreignId('activity_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('logged_by_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('workout_id')->nullable()->constrained()->nullOnDelete();
             $table->date('performed_at');
-            $table->integer('sets')->nullable();
-            $table->integer('reps')->nullable();
-            $table->decimal('weight', 8, 2)->nullable();
-            $table->integer('duration_seconds')->nullable();
-            $table->decimal('distance', 10, 2)->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            $table->index(['user_id', 'performed_at']);
             $table->index(['family_id', 'performed_at']);
+            $table->index(['user_id', 'performed_at']);
+            $table->index('workout_id');
         });
     }
 
@@ -36,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('activity_logs');
+        Schema::dropIfExists('workout_activities');
     }
 };
