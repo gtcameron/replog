@@ -2,10 +2,14 @@
 
 namespace App\Actions\Fortify;
 
+use App\Models\Family;
+use App\Models\Invite;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -31,10 +35,28 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        return User::create([
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'password' => Hash::make($input['password']),
-        ]);
+        if (! Invite::isAllowed($input['email'])) {
+            throw ValidationException::withMessages([
+                'email' => ['This email address is not authorized to register.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($input) {
+            $family = Family::create([
+                'name' => $input['name']."'s Family",
+            ]);
+
+            $user = User::create([
+                'name' => $input['name'],
+                'email' => $input['email'],
+                'password' => Hash::make($input['password']),
+                'family_id' => $family->id,
+                'can_login' => true,
+            ]);
+
+            Invite::claim($input['email']);
+
+            return $user;
+        });
     }
 }
