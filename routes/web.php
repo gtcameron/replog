@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\ActivityStatsController;
+use App\Http\Controllers\Admin\InviteController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\FamilyMemberController;
 use App\Http\Controllers\MemberStatsController;
@@ -79,5 +80,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('members/{member}', [MemberStatsController::class, 'show'])->name('stats.members.show');
         Route::get('activities', [ActivityStatsController::class, 'index'])->name('stats.activities.index');
         Route::get('activities/{activity}', [ActivityStatsController::class, 'show'])->name('stats.activities.show');
+    });
+
+    // Admin routes
+    Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::get('invites', [InviteController::class, 'index'])->name('admin.invites.index');
+        Route::post('invites', [InviteController::class, 'store'])->name('admin.invites.store');
+        Route::delete('invites/{invite}', [InviteController::class, 'destroy'])->name('admin.invites.destroy');
     });
 });

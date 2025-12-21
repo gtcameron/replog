@@ -107,6 +107,14 @@ export interface EquipmentType {
     label: string;
 }
 
+export interface Invite {
+    id: number;
+    email: string;
+    claimed_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface PaginatedData<T> {
     data: T[];
     current_page: number;

@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'family_id',
         'can_login',
+        'is_admin',
     ];
 
     /**
@@ -47,6 +48,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'can_login' => 'boolean',
+            'is_admin' => 'boolean',
         ];
     }
 
